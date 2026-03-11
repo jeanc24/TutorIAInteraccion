@@ -1,0 +1,55 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.0.3'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.graalvm.buildtools.native' version '0.11.4'
+}
+
+group = 'icc354.pucmm'
+version = '0.0.1-SNAPSHOT'
+description = 'TutorIAInteraccion'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    set('springModulithVersion', "2.0.3")
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-restclient'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.modulith:spring-modulith-starter-core'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    testImplementation 'org.springframework.boot:spring-boot-starter-restclient-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webflux-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.springframework.modulith:spring-modulith-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.modulith:spring-modulith-bom:${springModulithVersion}"
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
