@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutor de Lenguaje de Señas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="navbar">
+    <div class="logo">👋 SignTutor</div>
+    <div class="user-info">
+        <span id="score-display">Precisión: 0%</span>
+    </div>
+</header>
+
+<main class="dashboard">
+    <section class="tutor-panel">
+        <div class="lesson-header">
+            <h2>Lección Actual</h2>
+            <p>Categoría: <span class="badge">Saludos Básicos</span></p>
+        </div>
+
+        <div class="sign-card">
+            <h1 id="current-sign">"Hola"</h1>
+            <p class="instruction">Levanta la mano derecha a la altura de tu rostro y mueve los dedos suavemente de lado a lado.</p>
+        </div>
+
+        <div class="controls">
+            <button id="btn-prev" class="btn secondary">Anterior</button>
+            <button id="btn-next" class="btn primary">Siguiente Seña</button>
+        </div>
+    </section>
+
+    <section class="camera-panel">
+        <div class="video-container">
+            <video id="user-video" autoplay playsinline></video>
+
+            <div id="feedback-overlay" class="feedback hidden">
+                <span class="icon">✅</span>
+                <h3>¡Excelente!</h3>
+            </div>
+        </div>
+        <div class="camera-controls">
+            <button id="btn-camera" class="btn secondary">Activar Cámara</button>
+        </div>
+    </section>
+</main>
+
+<script src="js/app.js"></script>
+</body>
+</html>
