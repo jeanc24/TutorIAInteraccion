@@ -23,4 +23,6 @@ public class Sena {
     public void setCategoria(String categoria) { this.categoria = categoria; }
     public String getDificultad() { return dificultad; }
     public void setDificultad(String dificultad) { this.dificultad = dificultad; }
+    public String getVideoReferenciaUrl() { return videoReferenciaUrl; }
+    public void setVideoReferenciaUrl(String videoReferenciaUrl) { this.videoReferenciaUrl = videoReferenciaUrl; }
 }

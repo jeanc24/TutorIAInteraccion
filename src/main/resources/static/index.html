@@ -12,6 +12,10 @@
     <div class="logo">👋 SignTutor</div>
     <div class="user-info">
         <span id="score-display">Precisión: 0%</span>
+        <button id="btn-login-open" class="btn secondary small">Iniciar Sesión</button>
+        <button id="btn-register-open" class="btn secondary small">Registrarme</button>
+        <button id="btn-admin" class="btn secondary small hidden">Panel Admin</button>
+        <button id="btn-logout" class="btn primary small hidden">Cerrar Sesión</button>
     </div>
 </header>
 
@@ -19,12 +23,17 @@
     <section class="tutor-panel">
         <div class="lesson-header">
             <h2>Lección Actual</h2>
-            <p>Categoría: <span class="badge">Saludos Básicos</span></p>
+            <p>Categoría: <span id="current-category" class="badge">Sin categoría</span></p>
+        </div>
+
+        <div class="video-guide">
+            <h3>Video Guía</h3>
+            <div id="guide-video-wrapper" class="guide-media">Selecciona una seña para comenzar.</div>
         </div>
 
         <div class="sign-card">
-            <h1 id="current-sign">"Hola"</h1>
-            <p class="instruction">Levanta la mano derecha a la altura de tu rostro y mueve los dedos suavemente de lado a lado.</p>
+            <h1 id="current-sign">"Sin selección"</h1>
+            <p id="current-difficulty" class="instruction">Dificultad: -</p>
         </div>
 
         <div class="controls">
@@ -36,7 +45,6 @@
     <section class="camera-panel">
         <div class="video-container">
             <video id="user-video" autoplay playsinline></video>
-
             <div id="feedback-overlay" class="feedback hidden">
                 <span class="icon">✅</span>
                 <h3>¡Excelente!</h3>
@@ -45,8 +53,38 @@
         <div class="camera-controls">
             <button id="btn-camera" class="btn secondary">Activar Cámara</button>
         </div>
+
+        <div class="lesson-list-card">
+            <h3>Señas Disponibles</h3>
+            <ul id="lesson-list" class="lesson-list"></ul>
+        </div>
     </section>
 </main>
+
+<div id="login-modal" class="modal hidden">
+    <div class="modal-content">
+        <h2>Iniciar Sesión</h2>
+        <form id="login-form">
+            <input type="email" id="login-email" placeholder="Correo electrónico" required>
+            <input type="password" id="login-password" placeholder="Contraseña" required>
+            <button type="submit" class="btn primary">Entrar</button>
+        </form>
+        <button data-close-modal="login-modal" class="btn secondary">Cerrar</button>
+    </div>
+</div>
+
+<div id="register-modal" class="modal hidden">
+    <div class="modal-content">
+        <h2>Registro de Estudiante</h2>
+        <form id="register-form">
+            <input type="text" id="register-name" placeholder="Nombre completo" required>
+            <input type="email" id="register-email" placeholder="Correo electrónico" required>
+            <input type="password" id="register-password" placeholder="Contraseña (mínimo 6 caracteres)" minlength="6" required>
+            <button type="submit" class="btn primary">Crear Cuenta</button>
+        </form>
+        <button data-close-modal="register-modal" class="btn secondary">Cerrar</button>
+    </div>
+</div>
 
 <script src="js/app.js"></script>
 </body>
