@@ -74,20 +74,34 @@ document.addEventListener('DOMContentLoaded', () => {
     function parseYouTubeEmbed(url) {
         const regex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&?/]+)/;
         const match = url.match(regex);
-        return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+        if (!match) return null;
+        const videoId = match[1];
+        if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) return null;
+        return `https://www.youtube.com/embed/${videoId}`;
     }
 
     function renderGuideVideo(url) {
+        guideVideoWrapper.replaceChildren();
         if (!url) {
-            guideVideoWrapper.innerHTML = 'Sin video de referencia disponible.';
+            guideVideoWrapper.textContent = 'Sin video de referencia disponible.';
             return;
         }
         const youtubeEmbed = parseYouTubeEmbed(url);
         if (youtubeEmbed) {
-            guideVideoWrapper.innerHTML = `<iframe class="guide-frame" src="${youtubeEmbed}" title="Video guía de seña" allowfullscreen></iframe>`;
+            const iframe = document.createElement('iframe');
+            iframe.className = 'guide-frame';
+            iframe.src = youtubeEmbed;
+            iframe.title = 'Video guía de seña';
+            iframe.allowFullscreen = true;
+            guideVideoWrapper.appendChild(iframe);
             return;
         }
-        guideVideoWrapper.innerHTML = `<video class="guide-local-video" src="${url}" controls preload="metadata"></video>`;
+        const video = document.createElement('video');
+        video.className = 'guide-local-video';
+        video.src = url;
+        video.controls = true;
+        video.preload = 'metadata';
+        guideVideoWrapper.appendChild(video);
     }
 
     function renderCurrentSena() {

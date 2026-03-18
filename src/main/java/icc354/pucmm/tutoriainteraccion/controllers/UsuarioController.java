@@ -5,7 +5,6 @@ import icc354.pucmm.tutoriainteraccion.repositories.UsuarioRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -83,7 +82,7 @@ public class UsuarioController {
     public record UsuarioRequest(
             @NotBlank String nombre,
             @Email @NotBlank String email,
-            @Size(max = 100) String password,
+            String password,
             String rol
     ) {}
 }

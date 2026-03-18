@@ -73,8 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadSenas() {
-        const response = await fetch(`${API_BASE}/senas`);
-        const senas = await response.json();
+        const senas = await request('/senas', { method: 'GET' });
         senasTableBody.innerHTML = '';
         senas.forEach((s) => {
             const row = document.createElement('tr');
