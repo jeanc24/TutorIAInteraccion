@@ -16,9 +16,14 @@
     </div>
 </header>
 
-<main class="admin-layout">
-    <section class="admin-card">
-        <h2>Gestión de Estudiantes</h2>
+<main class="admin-layout" style="display: block;">
+
+    <div class="tabs">
+        <button class="tab-btn active" data-target="users-section">Gestión de Estudiantes</button>
+        <button class="tab-btn" data-target="senas-section">Catálogo de Señas</button>
+    </div>
+
+    <section id="users-section" class="admin-card tab-content active">
         <form id="user-form" class="grid-form">
             <input type="hidden" id="user-id">
             <input id="user-name" type="text" placeholder="Nombre" required>
@@ -33,40 +38,40 @@
         <div class="table-wrapper">
             <table>
                 <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Rol</th>
-                    <th>Acciones</th>
-                </tr>
+                <tr><th>ID</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Acciones</th></tr>
                 </thead>
                 <tbody id="users-table-body"></tbody>
             </table>
         </div>
     </section>
 
-    <section class="admin-card">
-        <h2>Catálogo de Señas</h2>
+    <section id="senas-section" class="admin-card tab-content">
         <form id="sena-form" class="grid-form">
             <input type="hidden" id="sena-id">
             <input id="sena-name" type="text" placeholder="Nombre de la seña" required>
-            <input id="sena-category" type="text" placeholder="Categoría" required>
-            <input id="sena-difficulty" type="text" placeholder="Dificultad (FACIL/MEDIO/DIFICIL)" required>
-            <input id="sena-video-url" type="text" placeholder="URL del video (YouTube o mp4 local)" required>
+            <input id="sena-category" type="text" placeholder="Categoría (Ej. Saludos)" required>
+            <select id="sena-difficulty" required>
+                <option value="" disabled selected>Selecciona Dificultad</option>
+                <option value="FACIL">FÁCIL</option>
+                <option value="MEDIO">MEDIO</option>
+                <option value="DIFICIL">DIFÍCIL</option>
+            </select>
+
+            <div class="drop-zone" id="drop-zone">
+                <span class="drop-icon">📁</span>
+                <p id="drop-text">Arrastra tu video aquí o haz clic para buscar (.mp4)</p>
+                <input type="file" id="video-file" accept="video/mp4,video/*" class="hidden-input">
+            </div>
+
+            <p class="text-center">- O usa una URL externa -</p>
+            <input id="sena-video-url" type="text" placeholder="Enlace de YouTube (Solo si no subes archivo)">
+
             <button type="submit" class="btn primary">Guardar Seña</button>
         </form>
         <div class="table-wrapper">
             <table>
                 <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Categoría</th>
-                    <th>Dificultad</th>
-                    <th>Video URL</th>
-                    <th>Acciones</th>
-                </tr>
+                <tr><th>ID</th><th>Nombre</th><th>Categoría</th><th>Dificultad</th><th>Video URL</th><th>Acciones</th></tr>
                 </thead>
                 <tbody id="senas-table-body"></tbody>
             </table>

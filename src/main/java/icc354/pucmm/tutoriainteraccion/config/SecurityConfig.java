@@ -33,9 +33,10 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/admin.html", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/", "/index.html", "/admin.html", "/css/**", "/js/**","/videos/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/upload").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/senas/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/usuarios/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/usuarios/**").hasRole("ADMIN")

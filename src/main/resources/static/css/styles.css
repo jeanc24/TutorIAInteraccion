@@ -303,3 +303,78 @@ th {
         align-items: flex-start;
     }
 }
+/* ---- Sistema de Pestañas ---- */
+.tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid #E5E7EB;
+}
+
+.tab-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+    margin-bottom: -2px;
+}
+
+.tab-btn:hover {
+    color: var(--primary-color);
+}
+
+.tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: flex; /* Mantiene la estructura de tu admin-card */
+}
+
+/* ---- Zona de Arrastrar y Soltar (Drag & Drop) ---- */
+.drop-zone {
+    border: 2px dashed #CBD5E1;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    background: #F8FAFC;
+    transition: all 0.2s ease;
+}
+
+.drop-zone.dragover {
+    border-color: var(--primary-color);
+    background: #EEF2FF;
+}
+
+.drop-zone .drop-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.drop-zone p {
+    color: var(--text-muted);
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.hidden-input {
+    display: none;
+}
+
+.text-center {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
