@@ -17,27 +17,31 @@ import java.util.UUID;
 @CrossOrigin(origins = "*")
 public class FileUploadController {
 
-    // Guarda los videos dentro de la carpeta estática para que puedan ser vistos inmediatamente
-    private static final String UPLOAD_DIR = "src/main/resources/static/videos/";
+    // CAMBIO AQUÍ: Ahora guarda en una carpeta externa en la raíz del proyecto
+    private static final String UPLOAD_DIR = "uploads/";
 
     @PostMapping
     public ResponseEntity<?> uploadVideo(@RequestParam("file") MultipartFile file) {
         try {
             File dir = new File(UPLOAD_DIR);
             if (!dir.exists()) {
-                dir.mkdirs(); // Crea la carpeta si no existe
+                dir.mkdirs();
             }
 
-            // Generamos un nombre único para evitar sobreescribir videos con el mismo nombre
-            String filename = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+            // LIMPIEZA: Reemplazamos espacios y caracteres raros por guiones bajos
+            String originalName = file.getOriginalFilename();
+            if (originalName != null) {
+                originalName = originalName.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+            }
+
+            String filename = UUID.randomUUID().toString() + "_" + originalName;
             Path path = Paths.get(UPLOAD_DIR + filename);
             Files.write(path, file.getBytes());
 
-            // Devolvemos la URL con la que el frontend podrá reproducir el video
             return ResponseEntity.ok(Map.of("url", "/videos/" + filename));
 
         } catch (IOException e) {
-            return ResponseEntity.status(500).body(Map.of("error", "Error al guardar el video en el servidor"));
+            return ResponseEntity.status(500).body(Map.of("error", "Error al guardar el video: " + e.getMessage()));
         }
     }
 }
