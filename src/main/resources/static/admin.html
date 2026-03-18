@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - SignTutor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="navbar">
+    <div class="logo">🛠️ Admin SignTutor</div>
+    <div class="user-info">
+        <button id="btn-home" class="btn secondary small">Volver</button>
+        <button id="btn-logout" class="btn primary small">Cerrar Sesión</button>
+    </div>
+</header>
+
+<main class="admin-layout">
+    <section class="admin-card">
+        <h2>Gestión de Estudiantes</h2>
+        <form id="user-form" class="grid-form">
+            <input type="hidden" id="user-id">
+            <input id="user-name" type="text" placeholder="Nombre" required>
+            <input id="user-email" type="email" placeholder="Email" required>
+            <input id="user-password" type="password" placeholder="Contraseña (solo para crear o cambiar)">
+            <select id="user-role">
+                <option value="ESTUDIANTE">ESTUDIANTE</option>
+                <option value="ADMIN">ADMIN</option>
+            </select>
+            <button type="submit" class="btn primary">Guardar Usuario</button>
+        </form>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                </tr>
+                </thead>
+                <tbody id="users-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="admin-card">
+        <h2>Catálogo de Señas</h2>
+        <form id="sena-form" class="grid-form">
+            <input type="hidden" id="sena-id">
+            <input id="sena-name" type="text" placeholder="Nombre de la seña" required>
+            <input id="sena-category" type="text" placeholder="Categoría" required>
+            <input id="sena-difficulty" type="text" placeholder="Dificultad (FACIL/MEDIO/DIFICIL)" required>
+            <input id="sena-video-url" type="text" placeholder="URL del video (YouTube o mp4 local)" required>
+            <button type="submit" class="btn primary">Guardar Seña</button>
+        </form>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Dificultad</th>
+                    <th>Video URL</th>
+                    <th>Acciones</th>
+                </tr>
+                </thead>
+                <tbody id="senas-table-body"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script src="js/admin.js"></script>
+</body>
+</html>

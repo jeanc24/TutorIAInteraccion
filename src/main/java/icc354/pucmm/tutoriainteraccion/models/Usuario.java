@@ -1,5 +1,6 @@
 package icc354.pucmm.tutoriainteraccion.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -15,7 +16,9 @@ public class Usuario {
     @Column(unique = true)
     private String email;
 
+    @JsonIgnore
     private String passwordHash;
+    private String rol;
 
     private LocalDateTime fechaRegistro = LocalDateTime.now();
 
@@ -28,4 +31,6 @@ public class Usuario {
     public void setEmail(String email) { this.email = email; }
     public String getPasswordHash() { return passwordHash; }
     public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    public String getRol() { return rol; }
+    public void setRol(String rol) { this.rol = rol; }
 }
