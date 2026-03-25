@@ -4,26 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Administración - SignTutor</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
-<header class="navbar">
-    <div class="logo">🛠️ Admin SignTutor</div>
+<body class="app-page admin-page">
+<div class="ambient-layer" aria-hidden="true">
+    <span class="orb orb-1"></span>
+    <span class="orb orb-2"></span>
+    <span class="grid-overlay"></span>
+</div>
+
+<header class="navbar glass-card">
+    <div class="logo-wrap">
+        <div class="logo-mark" aria-hidden="true">🛠️</div>
+        <div class="logo">Admin SignTutor <span class="logo-sub">Control Center</span></div>
+    </div>
     <div class="user-info">
-        <button id="btn-home" class="btn secondary small">Volver</button>
-        <button id="btn-logout" class="btn primary small">Cerrar Sesión</button>
+        <button id="btn-home" class="btn secondary small">🏠 Volver</button>
+        <button id="btn-logout" class="btn primary small">⏻ Cerrar Sesión</button>
     </div>
 </header>
 
-<main class="admin-layout" style="display: block;">
-
-    <div class="tabs">
-        <button class="tab-btn active" data-target="users-section">Gestión de Estudiantes</button>
-        <button class="tab-btn" data-target="senas-section">Catálogo de Señas</button>
+<main class="admin-layout">
+    <div class="tabs glass-card">
+        <button class="tab-btn active" data-target="users-section">👥 Gestión de Estudiantes</button>
+        <button class="tab-btn" data-target="senas-section">🤟 Catálogo de Señas</button>
     </div>
 
-    <section id="users-section" class="admin-card tab-content active">
+    <section id="users-section" class="admin-card tab-content active glass-card">
+        <div class="card-title-row">
+            <h3>Usuarios</h3>
+            <span class="tag">CRUD</span>
+        </div>
         <form id="user-form" class="grid-form">
             <input type="hidden" id="user-id">
             <input id="user-name" type="text" placeholder="Nombre" required>
@@ -45,7 +57,11 @@
         </div>
     </section>
 
-    <section id="senas-section" class="admin-card tab-content">
+    <section id="senas-section" class="admin-card tab-content glass-card">
+        <div class="card-title-row">
+            <h3>Señas</h3>
+            <span class="tag">Multimedia</span>
+        </div>
         <form id="sena-form" class="grid-form">
             <input type="hidden" id="sena-id">
             <input id="sena-name" type="text" placeholder="Nombre de la seña" required>
