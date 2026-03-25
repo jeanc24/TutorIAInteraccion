@@ -285,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // AR tuning constants (documented for clarity)
     const AR_FRAME_INTERVAL_MS   = 66;   // ~15 fps (66 ms) for MediaPipe inference
+    const AR_RESIZE_RETRY_MS     = 50;   // Extra retry once modal/video dimensions settle after opening
     const SIMILARITY_SUCCESS     = 0.82; // Normalised similarity score → "match"
     const SIMILARITY_ERROR       = 0.48; // Below this score → "mismatch"
     const SIMILARITY_NORM_FACTOR = 1.5;  // Max expected avg fingertip distance (normalised units)
@@ -702,13 +703,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             arStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
             arVideoEl.srcObject = arStream;
-            // Wait for the modal to paint and the video element to have measurable dimensions.
-            requestAnimationFrame(() => {
+            // Modal opens from display:none; resize once after paint, then retry shortly after stream attach.
+            const scheduleArResize = () => {
                 requestAnimationFrame(() => {
-                    if (arSystem) arSystem.resizeRenderer();
-                    setTimeout(() => { if (arSystem) arSystem.resizeRenderer(); }, 50);
+                    requestAnimationFrame(() => {
+                        if (arSystem) arSystem.resizeRenderer();
+                        setTimeout(() => { if (arSystem) arSystem.resizeRenderer(); }, AR_RESIZE_RETRY_MS);
+                    });
                 });
-            });
+            };
+            scheduleArResize();
             if (arVideoEl.readyState < 2) {
                 await new Promise(resolve => arVideoEl.addEventListener('loadeddata', resolve, { once: true }));
             }
