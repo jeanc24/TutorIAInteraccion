@@ -284,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ============================================================
-    // GHOST-HAND AR – THREE.JS + MEDIAPIPE CLASS
+    // GHOST-HAND AR – THREE.JS + IA MEDIAPIPE (Tasks Vision)
     // ============================================================
 
     const AR_FRAME_INTERVAL_MS   = 66;
@@ -310,6 +310,9 @@ document.addEventListener('DOMContentLoaded', () => {
             this._particles     = [];
             this._defaultScale  = 0.18;
             this._defaultAnchor = { x: 0.5, y: 0.35 };
+
+            // Estado para memoria de gestos dinámicos
+            this.dynamicState   = 'none';
 
             this._initThreeJS();
             this._initMediaPipe();
@@ -405,17 +408,32 @@ document.addEventListener('DOMContentLoaded', () => {
             ro.observe(this.videoEl);
         }
 
-        _initMediaPipe() {
-            if (typeof Hands === 'undefined') { this._mpOk = false; return; }
-            this._mpOk = true;
-            this.hands = new Hands({
-                locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/${f}`
-            });
-            this.hands.setOptions({
-                maxNumHands: 1, modelComplexity: 1,
-                minDetectionConfidence: 0.7, minTrackingConfidence: 0.5
-            });
-            this.hands.onResults(r => this._onHandResults(r));
+        async _initMediaPipe() {
+            this._mpOk = false;
+            try {
+                if (!window.FilesetResolver || !window.GestureRecognizer) {
+                    setTimeout(() => this._initMediaPipe(), 500);
+                    return;
+                }
+
+                const vision = await window.FilesetResolver.forVisionTasks(
+                    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm"
+                );
+
+                this.gestureRecognizer = await window.GestureRecognizer.createFromOptions(vision, {
+                    baseOptions: {
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/gesture_recognizer/gesture_recognizer/float16/1/gesture_recognizer.task",
+                        delegate: "GPU"
+                    },
+                    runningMode: "VIDEO",
+                    numHands: 1
+                });
+
+                this._mpOk = true;
+                this.dynamicState = 'none';
+            } catch (err) {
+                console.error("Error cargando el modelo de IA:", err);
+            }
         }
 
         _renderLoop() {
@@ -423,11 +441,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 requestAnimationFrame(loop);
                 this._updateParticles();
                 if (this._threeOk) this.renderer.render(this.scene, this.threeCamera);
+
                 if (this.enabled && this._mpOk && !this._busy && ts - this._lastFrameTs > AR_FRAME_INTERVAL_MS) {
                     if (this.videoEl.readyState >= 2) {
                         this._lastFrameTs = ts;
                         this._busy = true;
-                        this.hands.send({ image: this.videoEl }).catch(() => {}).finally(() => { this._busy = false; });
+                        try {
+                            const results = this.gestureRecognizer.recognizeForVideo(this.videoEl, performance.now());
+                            this._onHandResults(results);
+                        } catch (e) {
+                            console.error("Error en reconocimiento:", e);
+                        }
+                        this._busy = false;
                     }
                 }
             };
@@ -442,6 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.currentSenaId = senaId;
             this.state         = 'active';
             this.successLocked = false;
+            this.dynamicState  = 'none'; // Reseteamos la memoria de gestos dinámicos
             if (this._threeOk) {
                 this.ghostGroup.visible = true;
                 this._setColor('cyan');
@@ -458,8 +484,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
         _onHandResults(results) {
             if (!this.targetPose || !this.ghostGroup.visible) return;
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                this._trackHand(results.multiHandLandmarks[0]);
+
+            if (results.landmarks && results.landmarks.length > 0) {
+                const landmarks = results.landmarks[0];
+                this._trackHand(landmarks);
+
+                // Procesar la IA del Modelo de Google para Gestos
+                if (results.gestures && results.gestures.length > 0) {
+                    const gestureName = results.gestures[0][0].categoryName;
+                    const gestureScore = results.gestures[0][0].score;
+
+                    if (gestureScore > 0.6) {
+                        this._handleDynamicGesture(gestureName, landmarks);
+                    }
+                }
             } else {
                 if (this._threeOk) this._renderPoseAt(this.targetPose, this._defaultAnchor, this._defaultScale);
                 if (this.state !== 'success') {
@@ -467,6 +505,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     this._setStatus('active', '👻 RA activa');
                 }
             }
+        }
+
+        _handleDynamicGesture(gestureName, landmarks) {
+            const arSignLabel = document.getElementById('ar-sign-label');
+            const currentSignLower = (arSignLabel && arSignLabel.textContent) ? arSignLabel.textContent.toLowerCase() : '';
+
+            if (currentSignLower.includes('hola') || currentSignLower.includes('puño')) {
+                if (gestureName === 'Open_Palm') {
+                    this.dynamicState = 'open';
+                    this._setStatus('tracking', '✋ Mano abierta... ¡Ahora ciérrala!');
+                    this._setColor('cyan');
+                }
+                else if (gestureName === 'Closed_Fist' && this.dynamicState === 'open') {
+                    this._triggerSuccess(1.0);
+                    this.dynamicState = 'none';
+                }
+                return true;
+            }
+            return false;
         }
 
         _trackHand(lms) {
@@ -484,10 +541,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const sim = this._similarity(lms, this.targetPose);
 
-            // Actualizar barra de progreso visual
             if (arProgressFill) {
                 const percentage = Math.min(100, Math.max(0, sim * 100));
                 arProgressFill.style.width = `${percentage}%`;
+            }
+
+            const arSignLabel = document.getElementById('ar-sign-label');
+            const currentSignLower = (arSignLabel && arSignLabel.textContent) ? arSignLabel.textContent.toLowerCase() : '';
+            const isDynamicSign = currentSignLower.includes('hola') || currentSignLower.includes('puño');
+
+            // Si es dinámica, ignoramos el éxito por foto estática
+            if (isDynamicSign) {
+                return;
             }
 
             if (sim > SIMILARITY_SUCCESS) {
