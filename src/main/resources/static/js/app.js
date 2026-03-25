@@ -366,8 +366,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         _resizeRenderer() {
             if (!this._threeOk) return;
-            const w = this.videoEl.clientWidth  || this.videoEl.offsetWidth  || 640;
-            const h = this.videoEl.clientHeight || this.videoEl.offsetHeight || 480;
+            const host = this.canvasEl.parentElement || this.videoEl.parentElement;
+            const w = host?.clientWidth
+                || this.videoEl.clientWidth
+                || this.canvasEl.clientWidth
+                || this.videoEl.offsetWidth
+                || 640;
+            const h = host?.clientHeight
+                || this.videoEl.clientHeight
+                || this.canvasEl.clientHeight
+                || this.videoEl.offsetHeight
+                || 480;
             if (w > 0 && h > 0) this.renderer.setSize(w, h, false);
         }
 
@@ -693,14 +702,26 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             arStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
             arVideoEl.srcObject = arStream;
+            // Wait for the modal to paint and the video element to have measurable dimensions.
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    if (arSystem) arSystem.resizeRenderer();
+                    setTimeout(() => { if (arSystem) arSystem.resizeRenderer(); }, 50);
+                });
+            });
+            if (arVideoEl.readyState < 2) {
+                await new Promise(resolve => arVideoEl.addEventListener('loadeddata', resolve, { once: true }));
+            }
+            await arVideoEl.play().catch(() => {});
             if (arSystem) {
                 arSystem.enable();
-                // Give the video element a tick to paint before resizing
-                requestAnimationFrame(() => arSystem.resizeRenderer());
                 if (senas.length && currentIndex >= 0) {
                     const sena = senas[currentIndex];
                     arSystem.setTargetSign(sena.nombre, sena.id);
+                } else {
+                    arSystem.setTargetSign('default');
                 }
+                requestAnimationFrame(() => arSystem.resizeRenderer());
             }
         } catch (err) {
             console.error('Error al acceder a la cámara AR:', err);
