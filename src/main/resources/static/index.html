@@ -6,9 +6,7 @@
     <title>Tutor de Lenguaje de Señas</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Three.js for 3-D ghost-hand rendering -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-    <!-- MediaPipe Hands for real-time landmark detection -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js" crossorigin="anonymous"></script>
 </head>
 <body class="app-page">
@@ -117,7 +115,6 @@
     </div>
 </div>
 
-<!-- AR Mode full-screen modal -->
 <div id="ar-modal" class="ar-modal hidden" role="dialog" aria-modal="true">
     <div class="ar-modal-inner">
         <video id="ar-video" autoplay playsinline aria-hidden="true"></video>
@@ -128,14 +125,32 @@
                 <div id="ar-status" class="ar-status hidden">RA ACTIVA</div>
                 <div id="ar-sign-label" class="ar-sign-label">HOLA</div>
             </div>
-            <button id="btn-close-ar" class="btn secondary pill"><span aria-hidden="true">✕</span> Salir Modo AR</button>
+            <button id="btn-close-ar" class="btn secondary pill"><span aria-hidden="true">✕</span> Salir</button>
+        </div>
+
+        <div class="ar-pip-container">
+            <span class="pip-label">Referencia</span>
+            <div id="ar-guide-wrapper" class="pip-video-wrapper"></div>
+        </div>
+
+        <div class="ar-progress-container">
+            <div class="ar-progress-label">Precisión de la seña</div>
+            <div class="ar-progress-track">
+                <div id="ar-progress-fill" class="ar-progress-fill"></div>
+            </div>
         </div>
 
         <div class="ar-floating-bottom">
             <button id="btn-ar-next" class="btn primary pill">Siguiente Seña →</button>
         </div>
 
-        <div id="ar-checkmark" class="ar-checkmark hidden">✅</div>
+        <div id="ar-checkmark" class="ar-checkmark-premium hidden">
+            <svg class="checkmark-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+            <div class="success-text">¡Excelente!</div>
+        </div>
     </div>
 </div>
 

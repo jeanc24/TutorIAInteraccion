@@ -35,6 +35,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const arSignLabel  = document.getElementById('ar-sign-label');
     const btnArNext    = document.getElementById('btn-ar-next');
 
+    // UI Premium AR Refs
+    const arGuideWrapper = document.getElementById('ar-guide-wrapper');
+    const arProgressFill = document.getElementById('ar-progress-fill');
+
     let stream    = null;   // main camera stream
     let arStream  = null;   // AR modal camera stream
     let senas     = [];
@@ -287,8 +291,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const SIMILARITY_SUCCESS     = 0.82;
     const SIMILARITY_ERROR       = 0.48;
     const SIMILARITY_NORM_FACTOR = 1.5;
-    const SUCCESS_LOCK_MS        = 3000;
-    const FEEDBACK_DURATION_MS   = 2500;
+    const SUCCESS_LOCK_MS        = 2500;
+    const FEEDBACK_DURATION_MS   = 2000;
 
     class GhostHandAR {
         constructor(videoEl, canvasEl, statusEl) {
@@ -321,7 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.renderer.setClearColor(0x000000, 0);
 
             this.scene  = new THREE.Scene();
-            // ¡EL ARREGLO! Posición (0,0,5) y bordes 0 a 1 sincronizan la cámara de Three.js con la de MediaPipe
             this.threeCamera = new THREE.OrthographicCamera(0, 1, 1, 0, 0.1, 10);
             this.threeCamera.position.set(0, 0, 5);
 
@@ -369,7 +372,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const cw = this.videoEl.clientWidth;
             const ch = this.videoEl.clientHeight;
 
-            // Si el contenedor mide 0, esperamos
             if (cw === 0 || ch === 0) return;
 
             const videoRatio = vw / vh;
@@ -388,7 +390,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.canvasEl.style.height = `${finalH}px`;
             this.renderer.setSize(finalW, finalH, false);
 
-            // Respetamos la escala normalizada [0, 1] que manda MediaPipe
             this.threeCamera.left = 0;
             this.threeCamera.right = 1;
             this.threeCamera.top = 1;
@@ -482,6 +483,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (this.state === 'success') return;
 
             const sim = this._similarity(lms, this.targetPose);
+
+            // Actualizar barra de progreso visual
+            if (arProgressFill) {
+                const percentage = Math.min(100, Math.max(0, sim * 100));
+                arProgressFill.style.width = `${percentage}%`;
+            }
+
             if (sim > SIMILARITY_SUCCESS) {
                 this._triggerSuccess(sim);
             } else if (sim < SIMILARITY_ERROR) {
@@ -678,6 +686,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (arSignLabel && senas.length && currentIndex >= 0) {
             arSignLabel.textContent = senas[currentIndex].nombre;
         }
+
+        // Cargar Video Picture in Picture
+        if (arGuideWrapper && senas.length && currentIndex >= 0) {
+            const url = senas[currentIndex].videoReferenciaUrl;
+            const youtubeEmbed = parseYouTubeEmbed(url);
+            arGuideWrapper.innerHTML = youtubeEmbed
+                ? `<iframe src="${youtubeEmbed}&autoplay=1&mute=1&loop=1" frameborder="0" allow="autoplay; fullscreen"></iframe>`
+                : `<video src="${url}" autoplay muted loop playsinline></video>`;
+        }
+
         arModal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
 
@@ -690,7 +708,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             await arVideoEl.play().catch(() => {});
 
-            // Darle al modal 300ms para expandirse y forzar a que Three.js mida bien
             setTimeout(() => {
                 if (arSystem) {
                     arSystem.enable();
@@ -720,6 +737,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (arSystem) arSystem.disable();
         if (arCheckmark) arCheckmark.classList.add('hidden');
         if (arModal) arModal.classList.add('hidden');
+        if (arGuideWrapper) arGuideWrapper.innerHTML = ''; // Limpiar el video PiP al salir
         document.body.style.overflow = '';
     }
 
@@ -727,12 +745,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const checkEl = document.getElementById('ar-checkmark');
         if (checkEl) {
             checkEl.classList.add('hidden');
-            checkEl.offsetWidth;
+            void checkEl.offsetWidth;
             checkEl.classList.remove('hidden');
             setTimeout(() => checkEl.classList.add('hidden'), FEEDBACK_DURATION_MS);
         }
 
         playSuccessChime();
+
+        // Auto-avanzar a la siguiente seña despues de la celebración
+        setTimeout(() => {
+            if (btnArNext && !arModal.classList.contains('hidden')) {
+                btnArNext.click();
+            }
+        }, FEEDBACK_DURATION_MS);
 
         const user = getStoredUser();
         if (!user || !senaId) return;
@@ -769,12 +794,29 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCurrentSena();
     });
 
-    // Nuevo botón AR
     if (btnArNext) {
         btnArNext.addEventListener('click', () => {
             if (!senas.length) return;
             currentIndex = (currentIndex + 1) % senas.length;
             renderCurrentSena();
+
+            if (arSystem && arStream) {
+                const sena = senas[currentIndex];
+                arSystem.setTargetSign(sena.nombre, sena.id);
+                if (arSignLabel) arSignLabel.textContent = sena.nombre;
+
+                // Actualizar video PiP
+                if (arGuideWrapper) {
+                    const url = sena.videoReferenciaUrl;
+                    const youtubeEmbed = parseYouTubeEmbed(url);
+                    arGuideWrapper.innerHTML = youtubeEmbed
+                        ? `<iframe src="${youtubeEmbed}&autoplay=1&mute=1&loop=1" frameborder="0" allow="autoplay; fullscreen"></iframe>`
+                        : `<video src="${url}" autoplay muted loop playsinline></video>`;
+                }
+
+                // Resetear barra de precisión
+                if (arProgressFill) arProgressFill.style.width = '0%';
+            }
         });
     }
 
