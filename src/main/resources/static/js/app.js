@@ -3,34 +3,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const tokenKey = 'authToken';
     const userKey = 'authUser';
 
-    const videoElement = document.getElementById('user-video');
-    const arCanvas = document.getElementById('ar-canvas');
-    const arStatus = document.getElementById('ar-status');
-    const btnCamera = document.getElementById('btn-camera');
+    // Main-page DOM refs
+    const videoElement    = document.getElementById('user-video');
+    const btnCamera       = document.getElementById('btn-camera');
     const feedbackOverlay = document.getElementById('feedback-overlay');
-    const lessonList = document.getElementById('lesson-list');
-    const currentSign = document.getElementById('current-sign');
+    const lessonList      = document.getElementById('lesson-list');
+    const currentSign     = document.getElementById('current-sign');
     const currentCategory = document.getElementById('current-category');
     const currentDifficulty = document.getElementById('current-difficulty');
     const guideVideoWrapper = document.getElementById('guide-video-wrapper');
-    const videoGuideCard = document.querySelector('.video-guide');
 
-    const btnPrev = document.getElementById('btn-prev');
-    const btnNext = document.getElementById('btn-next');
-    const btnLoginOpen = document.getElementById('btn-login-open');
+    const btnPrev         = document.getElementById('btn-prev');
+    const btnNext         = document.getElementById('btn-next');
+    const btnLoginOpen    = document.getElementById('btn-login-open');
     const btnRegisterOpen = document.getElementById('btn-register-open');
-    const btnLogout = document.getElementById('btn-logout');
-    const btnAdmin = document.getElementById('btn-admin');
-    const loginModal = document.getElementById('login-modal');
-    const registerModal = document.getElementById('register-modal');
+    const btnLogout       = document.getElementById('btn-logout');
+    const btnAdmin        = document.getElementById('btn-admin');
+    const loginModal      = document.getElementById('login-modal');
+    const registerModal   = document.getElementById('register-modal');
+    const loginForm       = document.getElementById('login-form');
+    const registerForm    = document.getElementById('register-form');
 
-    const loginForm = document.getElementById('login-form');
-    const registerForm = document.getElementById('register-form');
+    // AR-modal DOM refs
+    const btnArMode    = document.getElementById('btn-ar-mode');
+    const btnCloseAr   = document.getElementById('btn-close-ar');
+    const arModal      = document.getElementById('ar-modal');
+    const arVideoEl    = document.getElementById('ar-video');
+    const arCanvas     = document.getElementById('ar-canvas');
+    const arStatus     = document.getElementById('ar-status');
+    const arCheckmark  = document.getElementById('ar-checkmark');
+    const arSignLabel  = document.getElementById('ar-sign-label');
 
-    let stream = null;
-    let senas = [];
+    let stream    = null;   // main camera stream
+    let arStream  = null;   // AR modal camera stream
+    let senas     = [];
     let currentIndex = -1;
-    let arSystem = null;
+    let arSystem  = null;
 
     // ============================================================
     // AUTH & API
@@ -114,7 +122,9 @@ document.addEventListener('DOMContentLoaded', () => {
         renderGuideVideo(sena.videoReferenciaUrl);
         const items = lessonList.querySelectorAll('li');
         items.forEach((item, idx) => item.classList.toggle('active', idx === currentIndex));
-        if (arSystem && stream) arSystem.setTargetSign(sena.nombre, sena.id);
+        // Update AR modal sign label and ghost hand pose if the modal is open
+        if (arSignLabel) arSignLabel.textContent = sena.nombre;
+        if (arSystem && arStream) arSystem.setTargetSign(sena.nombre, sena.id);
     }
 
     function renderLessonList() {
@@ -274,12 +284,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
 
     // AR tuning constants (documented for clarity)
-    const AR_FRAME_INTERVAL_MS       = 66;   // ~15 fps for MediaPipe inference
-    const SIMILARITY_SUCCESS         = 0.82; // Normalised similarity score → "match"
-    const SIMILARITY_ERROR           = 0.48; // Below this score → "mismatch"
-    const SIMILARITY_NORM_FACTOR     = 1.5;  // Max expected avg fingertip distance (normalised units)
-    const SUCCESS_LOCK_MS            = 3000; // How long the success state is held
-    const FEEDBACK_DURATION_MS       = 2500; // How long the overlay is shown
+    const AR_FRAME_INTERVAL_MS   = 66;   // ~15 fps (66 ms) for MediaPipe inference
+    const SIMILARITY_SUCCESS     = 0.82; // Normalised similarity score → "match"
+    const SIMILARITY_ERROR       = 0.48; // Below this score → "mismatch"
+    const SIMILARITY_NORM_FACTOR = 1.5;  // Max expected avg fingertip distance (normalised units)
+    const SUCCESS_LOCK_MS        = 3000; // How long the success state is held
+    const FEEDBACK_DURATION_MS   = 2500; // How long the overlay / checkmark are shown
 
     class GhostHandAR {
         constructor(videoEl, canvasEl, statusEl) {
@@ -289,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
             this.enabled        = false;
             this.targetPose     = null;
             this.currentSenaId  = null;
-            this.state          = 'idle';        // 'idle' | 'active' | 'success' | 'error'
+            this.state          = 'idle';
             this.successLocked  = false;
             this.onSuccess      = null;
             this._busy          = false;
@@ -315,7 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.renderer.setClearColor(0x000000, 0);
 
             this.scene  = new THREE.Scene();
-            // Ortho camera: x ∈ [0,1] left→right, y ∈ [0,1] bottom→top
             this.threeCamera = new THREE.OrthographicCamera(0, 1, 1, 0, 0.1, 10);
             this.threeCamera.position.set(0.5, 0.5, 5);
 
@@ -324,11 +333,9 @@ document.addEventListener('DOMContentLoaded', () => {
             pt.position.set(0.5, 0.8, 3);
             this.scene.add(pt);
 
-            // Ghost-hand group
             this.ghostGroup = new THREE.Group();
             this.scene.add(this.ghostGroup);
 
-            // 21 joint spheres
             this.jointMeshes = [];
             const jointGeo = new THREE.SphereGeometry(0.011, 10, 7);
             for (let i = 0; i < 21; i++) {
@@ -341,7 +348,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.ghostGroup.add(mesh);
             }
 
-            // Bone lines
             this.boneLines = [];
             HAND_CONNECTIONS.forEach(([a, b]) => {
                 const mat = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.55 });
@@ -351,7 +357,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.ghostGroup.add(line);
             });
 
-            // Particle group
             this.particleGroup = new THREE.Group();
             this.scene.add(this.particleGroup);
 
@@ -366,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (w > 0 && h > 0) this.renderer.setSize(w, h, false);
         }
 
-        // Public alias used in startCamera()
+        // Public alias so callers don't access a private method
         resizeRenderer() { this._resizeRenderer(); }
 
         _watchResize() {
@@ -392,7 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ----------------------------------------------------------
-        // Render loop (runs continuously; Three.js renders every frame)
+        // Render loop
         // ----------------------------------------------------------
         _renderLoop() {
             const loop = ts => {
@@ -414,11 +419,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // ----------------------------------------------------------
         // Public API
         // ----------------------------------------------------------
-        enable()  { this.enabled = true;  }
-        disable() {
-            this.enabled = false;
-            this.hideGhostHand();
-        }
+        enable()  { this.enabled = true; }
+        disable() { this.enabled = false; this.hideGhostHand(); }
 
         setTargetSign(signName, senaId) {
             this.targetPose    = findPoseForSign(signName);
@@ -444,12 +446,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // ----------------------------------------------------------
         _onHandResults(results) {
             if (!this.targetPose || !this.ghostGroup.visible) return;
-
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const lms = results.multiHandLandmarks[0];
-                this._trackHand(lms);
+                this._trackHand(results.multiHandLandmarks[0]);
             } else {
-                // No hand detected – show ghost at default center position
                 if (this._threeOk) this._renderPoseAt(this.targetPose, this._defaultAnchor, this._defaultScale);
                 if (this.state !== 'success') {
                     this._setColor('cyan');
@@ -458,12 +457,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Position ghost hand at detected wrist; evaluate match quality
         _trackHand(lms) {
             const wrist  = lms[0];
             const midMcp = lms[9];
-
-            // Detected palm scale and anchor in Three.js [0,1] space
             const ax = 1 - wrist.x;
             const ay = 1 - wrist.y;
             const mx = 1 - midMcp.x;
@@ -472,7 +468,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const scale = palmScale > 0.02 ? palmScale : this._defaultScale;
 
             if (this._threeOk) this._renderPoseAt(this.targetPose, { x: ax, y: ay }, scale);
-
             if (this.state === 'success') return;
 
             const sim = this._similarity(lms, this.targetPose);
@@ -488,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ----------------------------------------------------------
-        // Pose rendering (positions 21 joints + bone lines)
+        // Pose rendering
         // ----------------------------------------------------------
         _renderPoseAt(pose, anchor, scale) {
             const wristPose = pose[0];
@@ -497,11 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 y: anchor.y + (py - wristPose[1]) * scale,
                 z: (pz - wristPose[2]) * scale * 0.3
             }));
-
-            this.jointMeshes.forEach((m, i) => {
-                m.position.set(positions[i].x, positions[i].y, positions[i].z);
-            });
-
+            this.jointMeshes.forEach((m, i) => m.position.set(positions[i].x, positions[i].y, positions[i].z));
             this.boneLines.forEach(({ line, a, b }) => {
                 const posA = new THREE.Vector3(positions[a].x, positions[a].y, positions[a].z);
                 const posB = new THREE.Vector3(positions[b].x, positions[b].y, positions[b].z);
@@ -511,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ----------------------------------------------------------
-        // Pose similarity (fingertips, normalized, 2-D only)
+        // Similarity
         // ----------------------------------------------------------
         _similarity(lms, targetPose) {
             const wrist  = lms[0];
@@ -521,14 +512,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const palmDist = Math.sqrt(dx * dx + dy * dy);
             if (palmDist < 0.001) return 0;
 
-            // Normalize user landmarks: y-flip so positive y = "up"
             const userNorm = lms.map(lm => [
                 (lm.x - wrist.x) / palmDist,
-                -((lm.y - wrist.y) / palmDist),   // flip y → y-up
+                -((lm.y - wrist.y) / palmDist),
                 ((lm.z || 0) - (wrist.z || 0)) / palmDist
             ]);
 
-            // Normalize target pose (wrist at origin, middle MCP at ~[0,1,0])
             const tWrist  = targetPose[0];
             const tMcpVec = targetPose[9];
             const td = Math.sqrt((tMcpVec[0] - tWrist[0]) ** 2 + (tMcpVec[1] - tWrist[1]) ** 2);
@@ -538,7 +527,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 (py - tWrist[1]) / tScale
             ]);
 
-            // Compare fingertips (4, 8, 12, 16, 20)
             const tips = [4, 8, 12, 16, 20];
             let totalDist = 0;
             for (const i of tips) {
@@ -556,30 +544,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (this.successLocked) return;
             this.successLocked = true;
             this.state = 'success';
-
             this._setColor('green');
             this._setStatus('success', '✅ ¡Perfecto!');
             this._spawnParticles();
-
-            // Reset after the configured lock duration
             setTimeout(() => {
                 this.successLocked = false;
                 this.state = 'active';
                 this._setColor('cyan');
                 this._setStatus('active', '👻 RA activa');
             }, SUCCESS_LOCK_MS);
-
             if (typeof this.onSuccess === 'function') this.onSuccess(sim, this.currentSenaId);
         }
 
         // ----------------------------------------------------------
-        // Color helpers
+        // Colors
         // ----------------------------------------------------------
         _setColor(state) {
             const palettes = {
-                cyan:  { color: 0x00e5ff, emissive: 0x00e5ff, ei: 0.5, jo: 0.78, bo: 0.55 },
-                green: { color: 0x00ff88, emissive: 0x00ff00, ei: 1.2, jo: 0.92, bo: 0.75 },
-                red:   { color: 0xff3355, emissive: 0xff2244, ei: 0.7, jo: 0.72, bo: 0.55 }
+                cyan:  { color: 0x00e5ff, emissive: 0x00e5ff, ei: 0.5,  jo: 0.78, bo: 0.55 },
+                green: { color: 0x00ff88, emissive: 0x00ff00, ei: 1.2,  jo: 0.92, bo: 0.75 },
+                red:   { color: 0xff3355, emissive: 0xff2244, ei: 0.7,  jo: 0.72, bo: 0.55 }
             };
             const p = palettes[state] || palettes.cyan;
             this.jointMeshes.forEach(m => {
@@ -595,29 +579,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // ----------------------------------------------------------
-        // Particle burst (success)
+        // Particles
         // ----------------------------------------------------------
         _spawnParticles() {
             if (!this._threeOk) return;
-            // Clear old
             this.particleGroup.clear();
             this._particles = [];
-
             const origin = this.jointMeshes[0].position.clone();
             const count  = 24;
             const pGeo   = new THREE.SphereGeometry(0.007, 4, 4);
-
             for (let i = 0; i < count; i++) {
                 const mat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 1 });
                 const mesh = new THREE.Mesh(pGeo, mat);
                 mesh.position.copy(origin);
                 const angle = (i / count) * Math.PI * 2;
                 const speed = 0.006 + Math.random() * 0.006;
-                mesh.userData = {
-                    vx: Math.cos(angle) * speed,
-                    vy: Math.sin(angle) * speed + 0.004,
-                    life: 1.0
-                };
+                mesh.userData = { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed + 0.004, life: 1.0 };
                 this.particleGroup.add(mesh);
                 this._particles.push(mesh);
             }
@@ -626,10 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
         _updateParticles() {
             this._particles = this._particles.filter(p => {
                 p.userData.life -= 0.025;
-                if (p.userData.life <= 0) {
-                    this.particleGroup.remove(p);
-                    return false;
-                }
+                if (p.userData.life <= 0) { this.particleGroup.remove(p); return false; }
                 p.position.x += p.userData.vx;
                 p.position.y += p.userData.vy;
                 p.material.opacity = p.userData.life;
@@ -653,7 +627,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ============================================================
-    // CAMERA CONTROL
+    // AUDIO CUE (Web Audio API – no external file needed)
+    // ============================================================
+
+    function playSuccessChime() {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            // Two-note ascending chime: C5 → E5
+            [[523.25, 0], [659.25, 0.18]].forEach(([freq, delay]) => {
+                const osc  = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                const t = ctx.currentTime + delay;
+                gain.gain.setValueAtTime(0, t);
+                gain.gain.linearRampToValueAtTime(0.35, t + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+                osc.start(t);
+                osc.stop(t + 0.6);
+            });
+        } catch (_) { /* AudioContext not available – skip silently */ }
+    }
+
+    // ============================================================
+    // MAIN CAMERA CONTROL
     // ============================================================
 
     async function startCamera() {
@@ -662,19 +661,6 @@ document.addEventListener('DOMContentLoaded', () => {
             videoElement.srcObject = stream;
             btnCamera.textContent = 'Apagar Cámara';
             btnCamera.classList.replace('secondary', 'primary');
-
-            // Minimise guide video when AR takes over
-            if (videoGuideCard) videoGuideCard.classList.add('guide-mini');
-
-            if (arSystem) {
-                arSystem.enable();
-                arSystem.resizeRenderer();
-                // If a sign is already selected, activate ghost hand immediately
-                if (senas.length && currentIndex >= 0) {
-                    const sena = senas[currentIndex];
-                    arSystem.setTargetSign(sena.nombre, sena.id);
-                }
-            }
         } catch (err) {
             console.error('Error al acceder a la cámara:', err);
             alert('Por favor, permite el acceso a la cámara para poder practicar.');
@@ -689,18 +675,68 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         btnCamera.textContent = 'Activar Cámara';
         btnCamera.classList.replace('primary', 'secondary');
-
-        // Restore full guide video
-        if (videoGuideCard) videoGuideCard.classList.remove('guide-mini');
-
-        if (arSystem) arSystem.disable();
     }
 
-    // Success callback: show feedback overlay + register progress
-    function handleARSuccess(sim, senaId) {
-        feedbackOverlay.classList.remove('hidden');
-        setTimeout(() => feedbackOverlay.classList.add('hidden'), FEEDBACK_DURATION_MS);
+    // ============================================================
+    // AR MODAL CONTROL
+    // ============================================================
 
+    async function openArMode() {
+        if (!arModal) return;
+        // Update sign label from current selection
+        if (arSignLabel && senas.length && currentIndex >= 0) {
+            arSignLabel.textContent = senas[currentIndex].nombre;
+        }
+        arModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        // Start AR-dedicated camera stream
+        try {
+            arStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+            arVideoEl.srcObject = arStream;
+            if (arSystem) {
+                arSystem.enable();
+                // Give the video element a tick to paint before resizing
+                requestAnimationFrame(() => arSystem.resizeRenderer());
+                if (senas.length && currentIndex >= 0) {
+                    const sena = senas[currentIndex];
+                    arSystem.setTargetSign(sena.nombre, sena.id);
+                }
+            }
+        } catch (err) {
+            console.error('Error al acceder a la cámara AR:', err);
+            closeArMode();
+            alert('Por favor, permite el acceso a la cámara para usar el Modo AR.');
+        }
+    }
+
+    function closeArMode() {
+        if (arStream) {
+            arStream.getTracks().forEach(t => t.stop());
+            arVideoEl.srcObject = null;
+            arStream = null;
+        }
+        if (arSystem) arSystem.disable();
+        if (arCheckmark) arCheckmark.classList.add('hidden');
+        if (arModal) arModal.classList.add('hidden');
+        document.body.style.overflow = '';
+    }
+
+    // Success callback: visual checkmark + audio cue + progress API call
+    function handleARSuccess(sim, senaId) {
+        // Visual checkmark inside the AR modal — re-trigger CSS animation cleanly
+        const checkEl = document.getElementById('ar-checkmark');
+        if (checkEl) {
+            // Force animation replay by toggling the hidden class after a reflow
+            checkEl.classList.add('hidden');
+            checkEl.offsetWidth; // read offsetWidth to force a reflow and restart the CSS animation
+            checkEl.classList.remove('hidden');
+            setTimeout(() => checkEl.classList.add('hidden'), FEEDBACK_DURATION_MS);
+        }
+
+        // Audio cue
+        playSuccessChime();
+
+        // Register progress when logged in
         const user = getStoredUser();
         if (!user || !senaId) return;
         const puntuacion = Math.round(sim * 100);
@@ -715,6 +751,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================================
 
     btnCamera.addEventListener('click', () => { if (stream) stopCamera(); else startCamera(); });
+
+    if (btnArMode)  btnArMode.addEventListener('click', openArMode);
+    if (btnCloseAr) btnCloseAr.addEventListener('click', closeArMode);
+    // Close AR modal on backdrop click
+    if (arModal) {
+        arModal.addEventListener('click', e => { if (e.target === arModal) closeArMode(); });
+    }
+    // Close AR modal on Escape key
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && arModal && !arModal.classList.contains('hidden')) closeArMode(); });
 
     btnPrev.addEventListener('click', () => {
         if (!senas.length) return;
@@ -775,13 +820,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // BOOT
     // ============================================================
 
-    // Initialise AR system (guarded – requires Three.js + canvas in DOM)
-    if (arCanvas && typeof THREE !== 'undefined') {
-        arSystem = new GhostHandAR(videoElement, arCanvas, arStatus);
-        arSystem.onSuccess = handleARSuccess;
+    // Initialise AR system only if the modal elements and Three.js are available
+    if (arCanvas && arVideoEl && typeof THREE !== 'undefined') {
+        arSystem = new GhostHandAR(arVideoEl, arCanvas, arStatus);
+        arSystem.onSuccess = (sim, senaId) => handleARSuccess(sim, senaId);
     }
 
     updateAuthUI();
     cargarSenas();
 });
-

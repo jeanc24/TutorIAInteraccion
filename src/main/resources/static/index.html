@@ -68,10 +68,6 @@
                 <span></span><span></span><span></span><span></span>
             </div>
             <video id="user-video" autoplay playsinline></video>
-            <!-- AR overlay canvas rendered by Three.js -->
-            <canvas id="ar-canvas" aria-hidden="true"></canvas>
-            <!-- AR state badge -->
-            <div id="ar-status" class="ar-status hidden" aria-live="polite"></div>
             <div id="feedback-overlay" class="feedback hidden">
                 <div class="sparkles" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span></div>
                 <span class="icon">✅</span>
@@ -81,6 +77,7 @@
         </div>
         <div class="camera-controls glass-card">
             <button id="btn-camera" class="btn secondary">📷 Activar Cámara</button>
+            <button id="btn-ar-mode" class="btn primary">🥽 Modo AR</button>
         </div>
 
         <div class="lesson-list-card glass-card interactive-card">
@@ -117,6 +114,27 @@
             <button type="submit" class="btn primary">Crear Cuenta</button>
         </form>
         <button data-close-modal="register-modal" class="btn secondary">Cerrar</button>
+    </div>
+</div>
+
+<!-- AR Mode full-screen modal -->
+<div id="ar-modal" class="ar-modal hidden" role="dialog" aria-modal="true" aria-label="Modo AR – Guía de Mano Fantasma">
+    <div class="ar-modal-inner">
+        <div class="ar-modal-header">
+            <div class="ar-modal-title">
+                <span class="ar-modal-icon" aria-hidden="true">🥽</span>
+                <span>Guía AR – Mano Fantasma</span>
+                <span id="ar-sign-label" class="badge"></span>
+            </div>
+            <button id="btn-close-ar" class="btn secondary small">✕ Cerrar Modo AR</button>
+        </div>
+        <div class="ar-video-wrap">
+            <video id="ar-video" autoplay playsinline aria-hidden="true"></video>
+            <canvas id="ar-canvas" aria-hidden="true"></canvas>
+            <div id="ar-status" class="ar-status hidden" aria-live="polite"></div>
+            <div id="ar-checkmark" class="ar-checkmark hidden" aria-hidden="true">✅</div>
+        </div>
+        <p class="ar-hint">Coloca tu mano frente a la cámara y encájala sobre la <strong>Mano Fantasma</strong> cian.</p>
     </div>
 </div>
 
