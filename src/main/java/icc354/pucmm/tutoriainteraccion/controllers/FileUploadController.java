@@ -28,7 +28,6 @@ public class FileUploadController {
                 dir.mkdirs();
             }
 
-            // LIMPIEZA: Reemplazamos espacios y caracteres raros por guiones bajos
             String originalName = file.getOriginalFilename();
             if (originalName != null) {
                 originalName = originalName.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");

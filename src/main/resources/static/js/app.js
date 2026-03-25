@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const arStatus     = document.getElementById('ar-status');
     const arCheckmark  = document.getElementById('ar-checkmark');
     const arSignLabel  = document.getElementById('ar-sign-label');
+    const btnArNext    = document.getElementById('btn-ar-next');
 
     let stream    = null;   // main camera stream
     let arStream  = null;   // AR modal camera stream
@@ -162,7 +163,6 @@ document.addEventListener('DOMContentLoaded', () => {
         [5, 9], [9, 13], [13, 17]
     ];
 
-    // Base landmark positions: wrist at origin, y-UP, middle-MCP at ~[0,1,0]
     const BASE_EXT = [
         [0, 0, 0],          // 0  wrist
         [.3, .2, 0],        // 1  thumb cmc
@@ -283,13 +283,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // GHOST-HAND AR – THREE.JS + MEDIAPIPE CLASS
     // ============================================================
 
-    // AR tuning constants (documented for clarity)
-    const AR_FRAME_INTERVAL_MS   = 66;   // ~15 fps (66 ms) for MediaPipe inference
-    const SIMILARITY_SUCCESS     = 0.82; // Normalised similarity score → "match"
-    const SIMILARITY_ERROR       = 0.48; // Below this score → "mismatch"
-    const SIMILARITY_NORM_FACTOR = 1.5;  // Max expected avg fingertip distance (normalised units)
-    const SUCCESS_LOCK_MS        = 3000; // How long the success state is held
-    const FEEDBACK_DURATION_MS   = 2500; // How long the overlay / checkmark are shown
+    const AR_FRAME_INTERVAL_MS   = 66;
+    const SIMILARITY_SUCCESS     = 0.82;
+    const SIMILARITY_ERROR       = 0.48;
+    const SIMILARITY_NORM_FACTOR = 1.5;
+    const SUCCESS_LOCK_MS        = 3000;
+    const FEEDBACK_DURATION_MS   = 2500;
 
     class GhostHandAR {
         constructor(videoEl, canvasEl, statusEl) {
@@ -314,9 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this._watchResize();
         }
 
-        // ----------------------------------------------------------
-        // Three.js setup
-        // ----------------------------------------------------------
         _initThreeJS() {
             if (typeof THREE === 'undefined') { this._threeOk = false; return; }
             this._threeOk = true;
@@ -325,8 +321,9 @@ document.addEventListener('DOMContentLoaded', () => {
             this.renderer.setClearColor(0x000000, 0);
 
             this.scene  = new THREE.Scene();
+            // ¡EL ARREGLO! Posición (0,0,5) y bordes 0 a 1 sincronizan la cámara de Three.js con la de MediaPipe
             this.threeCamera = new THREE.OrthographicCamera(0, 1, 1, 0, 0.1, 10);
-            this.threeCamera.position.set(0.5, 0.5, 5);
+            this.threeCamera.position.set(0, 0, 5);
 
             this.scene.add(new THREE.AmbientLight(0xffffff, 0.9));
             const pt = new THREE.PointLight(0x00e5ff, 2.5, 8);
@@ -365,13 +362,40 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         _resizeRenderer() {
-            if (!this._threeOk) return;
-            const w = this.videoEl.clientWidth  || this.videoEl.offsetWidth  || 640;
-            const h = this.videoEl.clientHeight || this.videoEl.offsetHeight || 480;
-            if (w > 0 && h > 0) this.renderer.setSize(w, h, false);
+            if (!this._threeOk || !this.videoEl) return;
+
+            const vw = this.videoEl.videoWidth || 640;
+            const vh = this.videoEl.videoHeight || 480;
+            const cw = this.videoEl.clientWidth;
+            const ch = this.videoEl.clientHeight;
+
+            // Si el contenedor mide 0, esperamos
+            if (cw === 0 || ch === 0) return;
+
+            const videoRatio = vw / vh;
+            const containerRatio = cw / ch;
+
+            let finalW, finalH;
+            if (containerRatio > videoRatio) {
+                finalH = ch;
+                finalW = ch * videoRatio;
+            } else {
+                finalW = cw;
+                finalH = cw / videoRatio;
+            }
+
+            this.canvasEl.style.width = `${finalW}px`;
+            this.canvasEl.style.height = `${finalH}px`;
+            this.renderer.setSize(finalW, finalH, false);
+
+            // Respetamos la escala normalizada [0, 1] que manda MediaPipe
+            this.threeCamera.left = 0;
+            this.threeCamera.right = 1;
+            this.threeCamera.top = 1;
+            this.threeCamera.bottom = 0;
+            this.threeCamera.updateProjectionMatrix();
         }
 
-        // Public alias so callers don't access a private method
         resizeRenderer() { this._resizeRenderer(); }
 
         _watchResize() {
@@ -380,9 +404,6 @@ document.addEventListener('DOMContentLoaded', () => {
             ro.observe(this.videoEl);
         }
 
-        // ----------------------------------------------------------
-        // MediaPipe setup
-        // ----------------------------------------------------------
         _initMediaPipe() {
             if (typeof Hands === 'undefined') { this._mpOk = false; return; }
             this._mpOk = true;
@@ -396,15 +417,11 @@ document.addEventListener('DOMContentLoaded', () => {
             this.hands.onResults(r => this._onHandResults(r));
         }
 
-        // ----------------------------------------------------------
-        // Render loop
-        // ----------------------------------------------------------
         _renderLoop() {
             const loop = ts => {
                 requestAnimationFrame(loop);
                 this._updateParticles();
                 if (this._threeOk) this.renderer.render(this.scene, this.threeCamera);
-                // Throttle MediaPipe to ~15 fps
                 if (this.enabled && this._mpOk && !this._busy && ts - this._lastFrameTs > AR_FRAME_INTERVAL_MS) {
                     if (this.videoEl.readyState >= 2) {
                         this._lastFrameTs = ts;
@@ -416,9 +433,6 @@ document.addEventListener('DOMContentLoaded', () => {
             requestAnimationFrame(loop);
         }
 
-        // ----------------------------------------------------------
-        // Public API
-        // ----------------------------------------------------------
         enable()  { this.enabled = true; }
         disable() { this.enabled = false; this.hideGhostHand(); }
 
@@ -441,9 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this._setStatus('hidden', '');
         }
 
-        // ----------------------------------------------------------
-        // MediaPipe results handler
-        // ----------------------------------------------------------
         _onHandResults(results) {
             if (!this.targetPose || !this.ghostGroup.visible) return;
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
@@ -482,9 +493,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // ----------------------------------------------------------
-        // Pose rendering
-        // ----------------------------------------------------------
         _renderPoseAt(pose, anchor, scale) {
             const wristPose = pose[0];
             const positions = pose.map(([px, py, pz]) => ({
@@ -501,9 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // ----------------------------------------------------------
-        // Similarity
-        // ----------------------------------------------------------
         _similarity(lms, targetPose) {
             const wrist  = lms[0];
             const midMcp = lms[9];
@@ -537,9 +542,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return Math.max(0, 1 - (totalDist / tips.length) / SIMILARITY_NORM_FACTOR);
         }
 
-        // ----------------------------------------------------------
-        // Success
-        // ----------------------------------------------------------
         _triggerSuccess(sim) {
             if (this.successLocked) return;
             this.successLocked = true;
@@ -556,9 +558,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (typeof this.onSuccess === 'function') this.onSuccess(sim, this.currentSenaId);
         }
 
-        // ----------------------------------------------------------
-        // Colors
-        // ----------------------------------------------------------
         _setColor(state) {
             const palettes = {
                 cyan:  { color: 0x00e5ff, emissive: 0x00e5ff, ei: 0.5,  jo: 0.78, bo: 0.55 },
@@ -578,9 +577,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // ----------------------------------------------------------
-        // Particles
-        // ----------------------------------------------------------
         _spawnParticles() {
             if (!this._threeOk) return;
             this.particleGroup.clear();
@@ -611,9 +607,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // ----------------------------------------------------------
-        // Status badge
-        // ----------------------------------------------------------
         _setStatus(cls, text) {
             if (!this.statusEl) return;
             this.statusEl.className = 'ar-status';
@@ -627,13 +620,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ============================================================
-    // AUDIO CUE (Web Audio API – no external file needed)
+    // AUDIO CUE
     // ============================================================
 
     function playSuccessChime() {
         try {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            // Two-note ascending chime: C5 → E5
             [[523.25, 0], [659.25, 0.18]].forEach(([freq, delay]) => {
                 const osc  = ctx.createOscillator();
                 const gain = ctx.createGain();
@@ -648,7 +640,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 osc.start(t);
                 osc.stop(t + 0.6);
             });
-        } catch (_) { /* AudioContext not available – skip silently */ }
+        } catch (_) {}
     }
 
     // ============================================================
@@ -683,25 +675,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function openArMode() {
         if (!arModal) return;
-        // Update sign label from current selection
         if (arSignLabel && senas.length && currentIndex >= 0) {
             arSignLabel.textContent = senas[currentIndex].nombre;
         }
         arModal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
-        // Start AR-dedicated camera stream
+
         try {
             arStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
             arVideoEl.srcObject = arStream;
-            if (arSystem) {
-                arSystem.enable();
-                // Give the video element a tick to paint before resizing
-                requestAnimationFrame(() => arSystem.resizeRenderer());
-                if (senas.length && currentIndex >= 0) {
-                    const sena = senas[currentIndex];
-                    arSystem.setTargetSign(sena.nombre, sena.id);
-                }
+
+            if (arVideoEl.readyState < 2) {
+                await new Promise(resolve => arVideoEl.addEventListener('loadeddata', resolve, { once: true }));
             }
+            await arVideoEl.play().catch(() => {});
+
+            // Darle al modal 300ms para expandirse y forzar a que Three.js mida bien
+            setTimeout(() => {
+                if (arSystem) {
+                    arSystem.enable();
+                    if (senas.length && currentIndex >= 0) {
+                        const sena = senas[currentIndex];
+                        arSystem.setTargetSign(sena.nombre, sena.id);
+                    } else {
+                        arSystem.setTargetSign('default');
+                    }
+                    arSystem.resizeRenderer();
+                }
+            }, 300);
+
         } catch (err) {
             console.error('Error al acceder a la cámara AR:', err);
             closeArMode();
@@ -721,22 +723,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.style.overflow = '';
     }
 
-    // Success callback: visual checkmark + audio cue + progress API call
     function handleARSuccess(sim, senaId) {
-        // Visual checkmark inside the AR modal — re-trigger CSS animation cleanly
         const checkEl = document.getElementById('ar-checkmark');
         if (checkEl) {
-            // Force animation replay by toggling the hidden class after a reflow
             checkEl.classList.add('hidden');
-            checkEl.offsetWidth; // read offsetWidth to force a reflow and restart the CSS animation
+            checkEl.offsetWidth;
             checkEl.classList.remove('hidden');
             setTimeout(() => checkEl.classList.add('hidden'), FEEDBACK_DURATION_MS);
         }
 
-        // Audio cue
         playSuccessChime();
 
-        // Register progress when logged in
         const user = getStoredUser();
         if (!user || !senaId) return;
         const puntuacion = Math.round(sim * 100);
@@ -754,11 +751,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnArMode)  btnArMode.addEventListener('click', openArMode);
     if (btnCloseAr) btnCloseAr.addEventListener('click', closeArMode);
-    // Close AR modal on backdrop click
+
     if (arModal) {
         arModal.addEventListener('click', e => { if (e.target === arModal) closeArMode(); });
     }
-    // Close AR modal on Escape key
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && arModal && !arModal.classList.contains('hidden')) closeArMode(); });
 
     btnPrev.addEventListener('click', () => {
@@ -772,6 +768,15 @@ document.addEventListener('DOMContentLoaded', () => {
         currentIndex = (currentIndex + 1) % senas.length;
         renderCurrentSena();
     });
+
+    // Nuevo botón AR
+    if (btnArNext) {
+        btnArNext.addEventListener('click', () => {
+            if (!senas.length) return;
+            currentIndex = (currentIndex + 1) % senas.length;
+            renderCurrentSena();
+        });
+    }
 
     btnLoginOpen.addEventListener('click', () => openModal(loginModal));
     btnRegisterOpen.addEventListener('click', () => openModal(registerModal));
@@ -820,7 +825,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // BOOT
     // ============================================================
 
-    // Initialise AR system only if the modal elements and Three.js are available
     if (arCanvas && arVideoEl && typeof THREE !== 'undefined') {
         arSystem = new GhostHandAR(arVideoEl, arCanvas, arStatus);
         arSystem.onSuccess = (sim, senaId) => handleARSuccess(sim, senaId);
