@@ -6,6 +6,10 @@
     <title>Tutor de Lenguaje de Señas</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
+    <!-- Three.js for 3-D ghost-hand rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <!-- MediaPipe Hands for real-time landmark detection -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1646424915/hands.js" crossorigin="anonymous"></script>
 </head>
 <body class="app-page">
 <div class="ambient-layer" aria-hidden="true">
@@ -64,6 +68,10 @@
                 <span></span><span></span><span></span><span></span>
             </div>
             <video id="user-video" autoplay playsinline></video>
+            <!-- AR overlay canvas rendered by Three.js -->
+            <canvas id="ar-canvas" aria-hidden="true"></canvas>
+            <!-- AR state badge -->
+            <div id="ar-status" class="ar-status hidden" aria-live="polite"></div>
             <div id="feedback-overlay" class="feedback hidden">
                 <div class="sparkles" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span></div>
                 <span class="icon">✅</span>
