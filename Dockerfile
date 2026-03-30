@@ -1,17 +1,20 @@
-# Etapa 1: Compilación usando el Gradle Wrapper
-FROM eclipse-temurin:21-jdk-alpine AS build
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
-COPY . .
 
-# Le damos permisos de ejecución al script del wrapper por si acaso
-RUN chmod +x ./gradlew
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libglib2.0-0 libgl1 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Compilamos usando EL WRAPPER en lugar del gradle global
-RUN ./gradlew clean build -x test
+COPY requirements.txt /app/requirements.txt
+RUN pip install --upgrade pip \
+    && pip install --no-cache-dir -r /app/requirements.txt
 
-# Etapa 2: Imagen final superligera
-FROM eclipse-temurin:21-jre-alpine
-WORKDIR /app
-COPY --from=build /app/build/libs/*.jar app.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY backend /app/backend
+
+EXPOSE 8888
+
+CMD ["uvicorn", "app.main:app", "--app-dir", "/app/backend", "--host", "0.0.0.0", "--port", "8888"]

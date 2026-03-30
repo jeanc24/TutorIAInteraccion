@@ -1,8 +1,7 @@
-version: '3.8'
 services:
   db:
-    image: postgres:15
-    container_name: db_tutor_senas
+    image: postgres:16
+    container_name: tutorai_db
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password123
@@ -10,27 +9,20 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d tutor_senas_db"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
+      - tutorai_postgres:/var/lib/postgresql/data
 
   backend:
-    build: .
-    container_name: backend_tutor_senas
-    ports:
-      - "8080:8080"
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tutorai_backend_python
     depends_on:
-      db:
-        condition: service_healthy
+      - db
     environment:
-      # Sobrescribe el 'localhost' del application.properties por el nombre del contenedor 'db'
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/tutor_senas_db
-      - SPRING_DATASOURCE_USERNAME=admin
-      - SPRING_DATASOURCE_PASSWORD=password123
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      DATABASE_URL: postgresql+psycopg://admin:password123@db:5432/tutor_senas_db
+      SECRET_KEY: change-this-secret-key
+    ports:
+      - "8888:8888"
 
 volumes:
-  postgres_data:
+  tutorai_postgres:

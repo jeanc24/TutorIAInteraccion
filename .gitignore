@@ -1,40 +1,25 @@
-HELP.md
-.gradle
-build/
-!gradle/wrapper/gradle-wrapper.jar
-!**/src/main/**/build/
-!**/src/test/**/build/
+### Python ###
+.venv/
+__pycache__/
+*.pyc
+*.pyo
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-bin/
-!**/src/main/**/bin/
-!**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-### VS Code ###
+### Tooling ###
+.idea/
 .vscode/
+.pytest_cache/
+.mypy_cache/
 
-# Local DB artifacts
-data/*.mv.db
+### App data ###
+data/
+uploads/
+backend/.venv/
+backend/__pycache__/
+backend/.pytest_cache/
+backend/.mypy_cache/
+backend/data/
+backend/uploads/
+backend/models/*.task
+backend/app/static/videos/
+backend/tests/test_suite.db
+**/__pycache__/
