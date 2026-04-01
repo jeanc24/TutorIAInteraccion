@@ -81,8 +81,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!window.THREE || !this.canvas) return false;
             if (this.renderer) return true;
 
+            const initialWidth = Math.max(1, Math.floor(this.container?.clientWidth || 1));
+            const initialHeight = Math.max(1, Math.floor(this.container?.clientHeight || 1));
             this.scene = new THREE.Scene();
-            this.camera = new THREE.OrthographicCamera(0, 1, 1, 0, -100, 100);
+            this.camera = new THREE.OrthographicCamera(0, initialWidth, 0, initialHeight, -100, 100);
             this.camera.position.set(0, 0, 10);
             this.camera.lookAt(0, 0, 0);
 
@@ -103,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             for (let i = 0; i < 21; i += 1) {
-                const joint = new THREE.Mesh(pointGeometry, pointMaterial.clone());
+                const joint = new THREE.Mesh(pointGeometry, pointMaterial);
                 joint.visible = false;
                 this.jointMeshes.push(joint);
                 this.scene.add(joint);
@@ -170,6 +172,10 @@ document.addEventListener('DOMContentLoaded', () => {
             this.lastLandmarksAt = Date.now();
         }
 
+        mirrorX(xRaw) {
+            return 1 - xRaw;
+        }
+
         getStreamRect() {
             if (!this.streamElement || !this.container) return null;
             const viewW = this.container.clientWidth;
@@ -210,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     continue;
                 }
                 const [xRaw, yRaw, zRaw = 0] = point;
-                const x = offsetX + (1 - xRaw) * drawW;
+                const x = offsetX + this.mirrorX(xRaw) * drawW;
                 const y = offsetY + yRaw * drawH;
                 const z = zRaw * 140;
                 const mesh = this.jointMeshes[i];
@@ -225,10 +231,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const a = landmarks[aIdx];
                 const b = landmarks[bIdx];
                 if (!a || !b) return;
-                this.linePositions[ptr++] = offsetX + (1 - a[0]) * drawW;
+                this.linePositions[ptr++] = offsetX + this.mirrorX(a[0]) * drawW;
                 this.linePositions[ptr++] = offsetY + a[1] * drawH;
                 this.linePositions[ptr++] = (a[2] || 0) * 140;
-                this.linePositions[ptr++] = offsetX + (1 - b[0]) * drawW;
+                this.linePositions[ptr++] = offsetX + this.mirrorX(b[0]) * drawW;
                 this.linePositions[ptr++] = offsetY + b[1] * drawH;
                 this.linePositions[ptr++] = (b[2] || 0) * 140;
             });
