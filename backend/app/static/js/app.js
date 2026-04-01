@@ -38,6 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const mainVideoContainer = videoElement.closest('.video-container');
     const arModalInner = arVideoEl.closest('.ar-modal-inner');
+    const HAND_CONNECTIONS = [
+        [0, 1], [1, 2], [2, 3], [3, 4],
+        [0, 5], [5, 6], [6, 7], [7, 8],
+        [0, 9], [9, 10], [10, 11], [11, 12],
+        [0, 13], [13, 14], [14, 15], [15, 16],
+        [0, 17], [17, 18], [18, 19], [19, 20]
+    ];
 
     let senas = [];
     let currentIndex = -1;
@@ -48,6 +55,199 @@ document.addEventListener('DOMContentLoaded', () => {
     let visionSocket = null;
     let currentPracticeSessionId = null;
     let successTimeout = null;
+    let ghostHandAR = null;
+
+    class GhostHandAR {
+        constructor({ canvas, streamElement, container }) {
+            this.canvas = canvas;
+            this.streamElement = streamElement;
+            this.container = container;
+            this.renderer = null;
+            this.scene = null;
+            this.camera = null;
+            this.jointMeshes = [];
+            this.lineGeometry = null;
+            this.linePositions = null;
+            this.lineSegments = null;
+            this.active = false;
+            this.rafId = null;
+            this.lastLandmarks = null;
+            this.lastLandmarksAt = 0;
+            this.fadeTimeoutMs = 700;
+            this.resizeObserver = null;
+        }
+
+        init() {
+            if (!window.THREE || !this.canvas) return false;
+            if (this.renderer) return true;
+
+            this.scene = new THREE.Scene();
+            this.camera = new THREE.OrthographicCamera(0, 1, 1, 0, -100, 100);
+            this.camera.position.set(0, 0, 10);
+            this.camera.lookAt(0, 0, 0);
+
+            this.renderer = new THREE.WebGLRenderer({
+                canvas: this.canvas,
+                alpha: true,
+                antialias: true
+            });
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+            this.renderer.setClearColor(0x000000, 0);
+            this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+            const pointGeometry = new THREE.SphereGeometry(5, 16, 16);
+            const pointMaterial = new THREE.MeshBasicMaterial({
+                color: 0x7dd3fc,
+                transparent: true,
+                opacity: 0.95
+            });
+
+            for (let i = 0; i < 21; i += 1) {
+                const joint = new THREE.Mesh(pointGeometry, pointMaterial.clone());
+                joint.visible = false;
+                this.jointMeshes.push(joint);
+                this.scene.add(joint);
+            }
+
+            this.linePositions = new Float32Array(HAND_CONNECTIONS.length * 2 * 3);
+            this.lineGeometry = new THREE.BufferGeometry();
+            this.lineGeometry.setAttribute('position', new THREE.BufferAttribute(this.linePositions, 3));
+            const lineMaterial = new THREE.LineBasicMaterial({
+                color: 0x22d3ee,
+                transparent: true,
+                opacity: 0.9
+            });
+            this.lineSegments = new THREE.LineSegments(this.lineGeometry, lineMaterial);
+            this.lineSegments.visible = false;
+            this.scene.add(this.lineSegments);
+
+            this.resize();
+            this.resizeObserver = new ResizeObserver(() => this.resize());
+            this.resizeObserver.observe(this.container);
+            return true;
+        }
+
+        start() {
+            if (!this.init()) return;
+            this.active = true;
+            this.canvas.classList.remove('hidden');
+            this.resize();
+            this.renderLoop();
+        }
+
+        stop() {
+            this.active = false;
+            if (this.rafId) {
+                cancelAnimationFrame(this.rafId);
+                this.rafId = null;
+            }
+            this.lastLandmarks = null;
+            this.lastLandmarksAt = 0;
+            this.hideHand();
+            if (this.canvas) this.canvas.classList.add('hidden');
+            if (this.renderer) this.renderer.render(this.scene, this.camera);
+        }
+
+        resize() {
+            if (!this.renderer || !this.container || !this.camera) return;
+            const width = Math.max(1, Math.floor(this.container.clientWidth));
+            const height = Math.max(1, Math.floor(this.container.clientHeight));
+            this.renderer.setSize(width, height, false);
+            this.camera.left = 0;
+            this.camera.right = width;
+            this.camera.top = 0;
+            this.camera.bottom = height;
+            this.camera.updateProjectionMatrix();
+        }
+
+        updateLandmarks(landmarks) {
+            if (!this.active) return;
+            if (!Array.isArray(landmarks) || landmarks.length < 21) {
+                this.lastLandmarks = null;
+                return;
+            }
+            this.lastLandmarks = landmarks;
+            this.lastLandmarksAt = Date.now();
+        }
+
+        getStreamRect() {
+            if (!this.streamElement || !this.container) return null;
+            const viewW = this.container.clientWidth;
+            const viewH = this.container.clientHeight;
+            if (!viewW || !viewH) return null;
+
+            const mediaW = this.streamElement.naturalWidth || this.streamElement.videoWidth || viewW;
+            const mediaH = this.streamElement.naturalHeight || this.streamElement.videoHeight || viewH;
+            if (!mediaW || !mediaH) return null;
+
+            const scale = Math.min(viewW / mediaW, viewH / mediaH);
+            const drawW = mediaW * scale;
+            const drawH = mediaH * scale;
+            const offsetX = (viewW - drawW) * 0.5;
+            const offsetY = (viewH - drawH) * 0.5;
+            return { offsetX, offsetY, drawW, drawH };
+        }
+
+        hideHand() {
+            this.jointMeshes.forEach((joint) => {
+                joint.visible = false;
+            });
+            if (this.lineSegments) this.lineSegments.visible = false;
+        }
+
+        drawHand(landmarks) {
+            const streamRect = this.getStreamRect();
+            if (!streamRect) {
+                this.hideHand();
+                return;
+            }
+            const { offsetX, offsetY, drawW, drawH } = streamRect;
+
+            for (let i = 0; i < 21; i += 1) {
+                const point = landmarks[i];
+                if (!point || point.length < 2) {
+                    this.jointMeshes[i].visible = false;
+                    continue;
+                }
+                const [xRaw, yRaw, zRaw = 0] = point;
+                const x = offsetX + (1 - xRaw) * drawW;
+                const y = offsetY + yRaw * drawH;
+                const z = zRaw * 140;
+                const mesh = this.jointMeshes[i];
+                mesh.position.set(x, y, z);
+                const pulse = 0.8 + Math.min(Math.abs(zRaw) * 3, 0.8);
+                mesh.scale.setScalar(pulse);
+                mesh.visible = true;
+            }
+
+            let ptr = 0;
+            HAND_CONNECTIONS.forEach(([aIdx, bIdx]) => {
+                const a = landmarks[aIdx];
+                const b = landmarks[bIdx];
+                if (!a || !b) return;
+                this.linePositions[ptr++] = offsetX + (1 - a[0]) * drawW;
+                this.linePositions[ptr++] = offsetY + a[1] * drawH;
+                this.linePositions[ptr++] = (a[2] || 0) * 140;
+                this.linePositions[ptr++] = offsetX + (1 - b[0]) * drawW;
+                this.linePositions[ptr++] = offsetY + b[1] * drawH;
+                this.linePositions[ptr++] = (b[2] || 0) * 140;
+            });
+
+            this.lineGeometry.attributes.position.needsUpdate = true;
+            this.lineSegments.visible = true;
+        }
+
+        renderLoop = () => {
+            if (!this.active || !this.renderer) return;
+            if (this.lastLandmarks && (Date.now() - this.lastLandmarksAt) <= this.fadeTimeoutMs) {
+                this.drawHand(this.lastLandmarks);
+            } else {
+                this.hideHand();
+            }
+            this.renderer.render(this.scene, this.camera);
+            this.rafId = requestAnimationFrame(this.renderLoop);
+        };
+    }
 
     function getStoredUser() {
         const raw = localStorage.getItem(userKey);
@@ -197,6 +397,17 @@ document.addEventListener('DOMContentLoaded', () => {
         arCanvas.classList.add('hidden');
         arModalInner.insertBefore(arStreamImage, arCanvas);
         return arStreamImage;
+    }
+
+    function ensureGhostHandAR() {
+        if (ghostHandAR) return ghostHandAR;
+        const streamElement = ensureArStreamImage();
+        ghostHandAR = new GhostHandAR({
+            canvas: arCanvas,
+            streamElement,
+            container: arModalInner
+        });
+        return ghostHandAR;
     }
 
     function refreshMainStream() {
@@ -389,6 +600,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await startVision('practice', sena);
             arStreamActive = true;
             refreshArStream();
+            ensureGhostHandAR().start();
             ensureVisionSocket();
         } catch (err) {
             console.error(err);
@@ -400,6 +612,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function closeArMode() {
         arStreamActive = false;
         clearArStream();
+        if (ghostHandAR) ghostHandAR.stop();
         if (arCheckmark) arCheckmark.classList.add('hidden');
         if (arModal) arModal.classList.add('hidden');
         if (arGuideWrapper) arGuideWrapper.innerHTML = '';
@@ -420,6 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (scoreDisplay) scoreDisplay.textContent = `Precisión: ${percent}%`;
         if (arProgressFill && arStreamActive) arProgressFill.style.width = `${percent}%`;
         if (arStreamActive) updateArStatus(event);
+        if (arStreamActive && ghostHandAR) ghostHandAR.updateLandmarks(event.landmarks || null);
 
         if (event.estado === 'success') {
             showMainSuccess(event.feedback);
