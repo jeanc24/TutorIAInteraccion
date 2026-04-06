@@ -8,11 +8,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
-APP_DIR = BACKEND_DIR / "app"
-STATIC_DIR = APP_DIR / "static"
 DATA_DIR = BACKEND_DIR / "data"
-UPLOAD_DIR = BACKEND_DIR / "uploads"
-MODELS_DIR = BACKEND_DIR / "models"
 
 
 def _default_sqlite_url() -> str:
@@ -28,7 +24,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "TutorAI Sign Backend"
+    app_name: str = "SignTutor API"
     app_env: str = Field(default="development", alias="APP_ENV")
     api_prefix: str = "/api"
 
@@ -44,22 +40,7 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = ["*"]
 
-    vision_camera_index: int = Field(default=0, alias="VISION_CAMERA_INDEX")
-    vision_frame_width: int = Field(default=640, alias="VISION_FRAME_WIDTH")
-    vision_frame_height: int = Field(default=480, alias="VISION_FRAME_HEIGHT")
-    vision_fps: int = Field(default=15, alias="VISION_FPS")
-    vision_score_threshold: float = 0.82
-    vision_warning_threshold: float = 0.48
-    vision_success_cooldown_seconds: float = 2.0
-    vision_tasks_model_path: str = Field(
-        default=str((MODELS_DIR / "hand_landmarker.task").resolve()),
-        alias="VISION_TASKS_MODEL_PATH",
-    )
-
-    static_dir: Path = STATIC_DIR
-    upload_dir: Path = UPLOAD_DIR
     data_dir: Path = DATA_DIR
-    models_dir: Path = MODELS_DIR
 
 
 @lru_cache

@@ -3,9 +3,9 @@ requires = ["setuptools>=69", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "tutorai-backend"
-version = "0.1.0"
-description = "Backend FastAPI para tutor interactivo de lenguaje de senas"
+name = "signtutor-backend"
+version = "0.2.0"
+description = "Backend FastAPI para SignTutor — plataforma de aprendizaje del abecedario en lengua de señas"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -20,9 +20,6 @@ dependencies = [
     "pyjwt>=2.9,<3.0",
     "python-multipart>=0.0.9,<1.0",
     "structlog>=24.4,<25.0",
-    "opencv-python>=4.10,<5.0",
-    "numpy>=2.1,<3.0",
-    "mediapipe>=0.10.14,<0.11.0",
     "psycopg[binary]>=3.2,<4.0",
 ]
 

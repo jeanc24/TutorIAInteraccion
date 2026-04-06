@@ -1,28 +1,49 @@
 services:
   db:
-    image: postgres:16
-    container_name: tutorai_db
+    image: postgres:16-alpine
+    container_name: signtutor_db
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: tutor_senas_db
+      POSTGRES_USER: signtutor
+      POSTGRES_PASSWORD: signtutor_secret
+      POSTGRES_DB: signtutor_db
     ports:
       - "5432:5432"
     volumes:
-      - tutorai_postgres:/var/lib/postgresql/data
+      - signtutor_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U signtutor -d signtutor_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
-    container_name: tutorai_backend_python
+    container_name: signtutor_backend
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg://admin:password123@db:5432/tutor_senas_db
-      SECRET_KEY: change-this-secret-key
+      DATABASE_URL: postgresql+psycopg://signtutor:signtutor_secret@db:5432/signtutor_db
+      SECRET_KEY: ${SECRET_KEY:-change-this-secret-in-production}
+      APP_ENV: production
+      DEFAULT_ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@signtutor.com}
+      DEFAULT_ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
     ports:
       - "8888:8888"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: signtutor_frontend
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
 
 volumes:
-  tutorai_postgres:
+  signtutor_postgres:

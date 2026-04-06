@@ -1,25 +1,45 @@
 ### Python ###
-.venv/
 __pycache__/
 *.pyc
 *.pyo
+.venv/
 
-### Tooling ###
+### Node ###
+node_modules/
+.next/
+out/
+
+### IDE / Tooling ###
 .idea/
 .vscode/
+.cursor/
 .pytest_cache/
 .mypy_cache/
 
-### App data ###
-data/
-uploads/
-backend/.venv/
-backend/__pycache__/
-backend/.pytest_cache/
-backend/.mypy_cache/
+### Environment (secrets) ###
+.env
+.env.local
+
+### Datasets (descargar aparte, ver README) ###
+datasets/
+*.zip
+*.rar
+*.7z
+*.tar.gz
+
+### Backend runtime ###
 backend/data/
 backend/uploads/
-backend/models/*.task
-backend/app/static/videos/
+backend/models/
+backend/.venv/
 backend/tests/test_suite.db
-**/__pycache__/
+
+### Frontend build ###
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+### OS ###
+.DS_Store
+Thumbs.db
+desktop.ini

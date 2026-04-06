@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-surface text-text-primary font-sans;
+  }
+
+  .dark body {
+    @apply bg-surface-dark text-text-primary-dark;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface-card rounded-xl shadow-sm border border-stone-100;
+  }
+
+  .dark .card {
+    @apply bg-surface-card-dark border-stone-800;
+  }
+
+  .btn-primary {
+    @apply bg-accent text-white px-5 py-2.5 rounded-lg font-medium
+           hover:bg-accent-hover active:scale-[0.98] transition-all
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply bg-transparent text-text-primary border border-stone-200 px-5 py-2.5 rounded-lg font-medium
+           hover:bg-stone-50 active:scale-[0.98] transition-all
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2;
+  }
+
+  .dark .btn-secondary {
+    @apply text-text-primary-dark border-stone-700 hover:bg-stone-800;
+  }
+
+  .btn-ghost {
+    @apply bg-transparent text-text-secondary px-3 py-2 rounded-lg font-medium
+           hover:text-text-primary hover:bg-stone-50 transition-all
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+  }
+
+  .dark .btn-ghost {
+    @apply text-text-secondary-dark hover:text-text-primary-dark hover:bg-stone-800;
+  }
+}
+
+@layer utilities {
+  .letter-display {
+    @apply text-7xl font-extrabold tracking-tight;
+  }
+
+  .camera-mirror {
+    transform: scaleX(-1);
+  }
+
+  .landmark-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+}
+
+@keyframes checkmark-stroke {
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes checkmark-circle {
+  0% {
+    stroke-dasharray: 0, 157;
+  }
+  100% {
+    stroke-dasharray: 157, 157;
+  }
+}
+
+.checkmark-svg .checkmark-circle {
+  stroke: #059669;
+  stroke-width: 2;
+  animation: checkmark-circle 0.6s ease-in-out forwards;
+}
+
+.checkmark-svg .checkmark-check {
+  stroke: #059669;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: checkmark-stroke 0.3s 0.4s ease-out forwards;
+}

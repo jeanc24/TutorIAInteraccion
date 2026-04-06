@@ -194,3 +194,31 @@ class AuditLog(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     user: Mapped[User | None] = relationship(back_populates="audits")
+
+
+class AlphabetProgress(Base):
+    __tablename__ = "progreso_abecedario"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=False)
+    letter: Mapped[str] = mapped_column(String(2), nullable=False)
+    best_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    last_practiced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    __table_args__ = (UniqueConstraint("usuario_id", "letter", name="uq_user_alphabet_letter"),)
+
+
+class AlphabetAttempt(Base):
+    __tablename__ = "intentos_abecedario"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id"), nullable=False)
+    letter: Mapped[str] = mapped_column(String(2), nullable=False)
+    score: Mapped[float] = mapped_column(Float, nullable=False)
+    duration_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    mode: Mapped[str] = mapped_column(String(20), nullable=False, default="practice")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
