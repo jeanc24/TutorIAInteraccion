@@ -5,11 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import CameraFeed from '@/components/CameraFeed';
 import FeedbackBar from '@/components/FeedbackBar';
+import LetterReferenceFigure from '@/components/LetterReferenceFigure';
 import SuccessAnimation from '@/components/SuccessAnimation';
 import { useCamera } from '@/hooks/useCamera';
 import { useHandTracking } from '@/hooks/useHandTracking';
 import { useProgress } from '@/hooks/useProgress';
-import { ALPHABET_MAP, getNextLetter, getDifficultyLabel, getDifficultyColor, getLetterImagePath } from '@/lib/alphabet';
+import { ALPHABET_MAP, getNextLetter, getDifficultyLabel, getDifficultyColor } from '@/lib/alphabet';
 import { evaluate, createEvalContext } from '@/lib/evaluator';
 import { EvaluationResult } from '@/lib/types';
 
@@ -25,7 +26,7 @@ function PracticeContent() {
   const startTimeRef = useRef<number>(0);
   const evalCtxRef = useRef(createEvalContext());
 
-  const { progress, record, completedCount } = useProgress();
+  const { record, completedCount } = useProgress();
   const { videoRef, state: cameraState, start: startCamera, stop: stopCamera } = useCamera();
   const {
     isModelLoaded,
@@ -116,7 +117,7 @@ function PracticeContent() {
   const handleExit = useCallback(() => {
     stopTracking();
     stopCamera();
-    router.push(`/learn`);
+    router.push('/learn');
   }, [stopTracking, stopCamera, router]);
 
   return (
@@ -143,13 +144,12 @@ function PracticeContent() {
         {!sessionStarted ? (
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
-              <div className="w-36 h-36 mx-auto mb-6 rounded-2xl bg-white overflow-hidden shadow-lg flex items-center justify-center">
-                <img
-                  src={getLetterImagePath(currentLetter)}
-                  alt={`Seña de la letra ${currentLetter}`}
-                  className="w-full h-full object-contain p-2"
-                />
-              </div>
+              <LetterReferenceFigure
+                letter={currentLetter}
+                alt={`Seña de la letra ${currentLetter}`}
+                variant="card"
+                className="mb-6"
+              />
               <h2 className="text-xl font-bold text-white mb-2">Practicar &ldquo;{currentLetter}&rdquo;</h2>
               <p className="text-stone-400 mb-2 max-w-sm mx-auto">{letterData.description}</p>
               <p className="text-stone-500 text-sm mb-6">Se activará tu cámara para detectar la seña.</p>
@@ -161,16 +161,13 @@ function PracticeContent() {
         ) : (
           <div className="flex-1 flex flex-col gap-4">
             <div className="relative flex-1 min-h-[300px]">
-              {/* PiP reference */}
               <div className="absolute top-3 left-3 z-10 bg-black/70 rounded-lg p-2 backdrop-blur-sm">
                 <div className="text-[10px] text-stone-400 mb-1 text-center">Referencia</div>
-                <div className="w-24 h-24 bg-white rounded overflow-hidden flex items-center justify-center">
-                  <img
-                    src={getLetterImagePath(currentLetter)}
-                    alt={`Seña ${currentLetter}`}
-                    className="w-full h-full object-contain p-1"
-                  />
-                </div>
+                <LetterReferenceFigure
+                  letter={currentLetter}
+                  alt={`Seña ${currentLetter}`}
+                  variant="compact"
+                />
               </div>
 
               {cameraState.isLoading || loadingProgress ? (

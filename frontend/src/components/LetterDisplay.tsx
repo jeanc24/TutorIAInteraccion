@@ -1,7 +1,8 @@
 'use client';
 
 import { LetterData, LetterProgress } from '@/lib/types';
-import { getDifficultyColor, getDifficultyLabel, getLetterImagePath } from '@/lib/alphabet';
+import { getDifficultyColor, getDifficultyLabel } from '@/lib/alphabet';
+import LetterReferenceFigure from './LetterReferenceFigure';
 
 interface LetterDisplayProps {
   letter: LetterData;
@@ -10,8 +11,6 @@ interface LetterDisplayProps {
 }
 
 export default function LetterDisplay({ letter, letterProgress, onPractice }: LetterDisplayProps) {
-  const imagePath = getLetterImagePath(letter.letter);
-
   return (
     <div className="card p-6 animate-fade-in">
       <div className="flex items-start justify-between mb-4">
@@ -31,13 +30,11 @@ export default function LetterDisplay({ letter, letterProgress, onPractice }: Le
       <div className="text-center mb-6">
         <div className="letter-display text-accent mb-2">{letter.letter}</div>
 
-        <div className="w-52 h-52 mx-auto mb-4 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 flex items-center justify-center overflow-hidden shadow-sm">
-          <img
-            src={imagePath}
-            alt={`Seña de la letra ${letter.letter}: ${letter.description}`}
-            className="w-full h-full object-contain p-2"
-          />
-        </div>
+        <LetterReferenceFigure
+          letter={letter.letter}
+          alt={`Seña de la letra ${letter.letter}: ${letter.description}`}
+          variant="full"
+        />
 
         <p className="text-text-secondary max-w-md mx-auto leading-relaxed">
           {letter.description}
