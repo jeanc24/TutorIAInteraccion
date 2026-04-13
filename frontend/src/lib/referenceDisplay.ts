@@ -15,25 +15,25 @@ export function getReferenceFigureConfig(variant: ReferenceFigureVariant): Refer
   switch (variant) {
     case 'full':
       return {
-        frameClassName: 'w-52 h-52 mx-auto mb-4',
+        frameClassName: 'w-40 h-40 sm:w-52 sm:h-52 mx-auto mb-4',
         boxClassName: BASE_BOX_CLASS_NAME,
         imageClassName: BASE_IMAGE_CLASS_NAME,
       };
     case 'compact':
       return {
-        frameClassName: 'w-24 h-24',
+        frameClassName: 'w-16 h-16 sm:w-24 sm:h-24',
         boxClassName: BASE_BOX_CLASS_NAME,
         imageClassName: BASE_IMAGE_CLASS_NAME,
       };
     case 'card':
       return {
-        frameClassName: 'w-36 h-36 mx-auto',
+        frameClassName: 'w-28 h-28 sm:w-36 sm:h-36 mx-auto',
         boxClassName: BASE_BOX_CLASS_NAME,
         imageClassName: BASE_IMAGE_CLASS_NAME,
       };
     default:
       return {
-        frameClassName: 'w-24 h-24',
+        frameClassName: 'w-16 h-16 sm:w-24 sm:h-24',
         boxClassName: BASE_BOX_CLASS_NAME,
         imageClassName: BASE_IMAGE_CLASS_NAME,
       };

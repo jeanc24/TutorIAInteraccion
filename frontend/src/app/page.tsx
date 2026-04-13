@@ -3,7 +3,7 @@ import Link from 'next/link';
 export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="h-14 flex items-center px-6 border-b border-stone-100">
+      <header className="h-14 flex items-center px-4 sm:px-6 border-b border-stone-100">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -17,8 +17,8 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-4">
-        <div className="max-w-2xl text-center">
+      <main className="flex-1 flex items-center justify-center px-4 py-8 sm:py-12">
+        <div className="w-full max-w-2xl text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 text-accent text-sm font-medium mb-6">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -26,26 +26,26 @@ export default function LandingPage() {
             Aprende con tu cámara
           </div>
 
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-4 text-text-primary">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-4 text-text-primary">
             Aprende el abecedario en{' '}
             <span className="text-accent">lengua de señas</span>
           </h1>
 
-          <p className="text-lg text-text-secondary max-w-lg mx-auto mb-8 leading-relaxed">
+          <p className="text-base sm:text-lg text-text-secondary max-w-lg mx-auto mb-8 leading-relaxed">
             Practica cada letra con tu cámara y recibe retroalimentación en tiempo real.
             Sin instalaciones, sin complicaciones.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/learn" className="btn-primary text-center text-base px-8 py-3">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-stretch sm:items-center">
+            <Link href="/learn" className="btn-primary text-center text-base px-8 py-3 w-full sm:w-auto">
               Comenzar ahora
             </Link>
-            <Link href="/progress" className="btn-secondary text-center text-base px-8 py-3">
+            <Link href="/progress" className="btn-secondary text-center text-base px-8 py-3 w-full sm:w-auto">
               Ver mi progreso
             </Link>
           </div>
 
-          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
+          <div className="mt-10 sm:mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
             {[
               {
                 title: 'Aprender',

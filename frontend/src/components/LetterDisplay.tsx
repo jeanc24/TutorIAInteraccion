@@ -12,15 +12,15 @@ interface LetterDisplayProps {
 
 export default function LetterDisplay({ letter, letterProgress, onPractice }: LetterDisplayProps) {
   return (
-    <div className="card p-6 animate-fade-in">
-      <div className="flex items-start justify-between mb-4">
+    <div className="card p-4 sm:p-6 animate-fade-in">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 mb-4">
         <div>
           <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-full border ${getDifficultyColor(letter.difficulty)}`}>
             {getDifficultyLabel(letter.difficulty)}
           </span>
         </div>
         {letterProgress && letterProgress.attemptCount > 0 && (
-          <div className="text-right text-sm text-text-secondary">
+          <div className="text-left sm:text-right text-sm text-text-secondary">
             <div>Mejor: {Math.round(letterProgress.bestScore * 100)}%</div>
             <div>{letterProgress.attemptCount} intentos</div>
           </div>
@@ -42,7 +42,7 @@ export default function LetterDisplay({ letter, letterProgress, onPractice }: Le
       </div>
 
       <div className="flex justify-center">
-        <button onClick={onPractice} className="btn-primary flex items-center gap-2">
+        <button onClick={onPractice} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
             <circle cx="12" cy="13" r="4" />

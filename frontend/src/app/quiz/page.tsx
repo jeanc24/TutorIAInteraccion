@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import CameraFeed from '@/components/CameraFeed';
 import FeedbackBar from '@/components/FeedbackBar';
-import LetterReferenceFigure from '@/components/LetterReferenceFigure';
 import { useCamera } from '@/hooks/useCamera';
 import { useHandTracking } from '@/hooks/useHandTracking';
 import { useProgress } from '@/hooks/useProgress';
@@ -373,7 +372,7 @@ export default function QuizPage() {
     <div className="min-h-screen flex flex-col bg-stone-950">
       <Header completedCount={completedCount} />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-3 sm:px-4 py-4 sm:py-6">
         {phase === 'intro' && (
           <div className="flex-1 flex items-center justify-center min-h-[60vh]">
             <div className="w-full max-w-4xl">
@@ -404,7 +403,7 @@ export default function QuizPage() {
                           : 'border-stone-800 bg-stone-900 hover:border-stone-700'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-start justify-between gap-2 mb-3">
                         <span className="text-sm font-semibold uppercase tracking-[0.18em] text-stone-500">
                           {mode.id === 'gesture' ? 'Señas' : mode.id === 'question' ? 'Preguntas' : 'Emparejar'}
                         </span>
@@ -424,7 +423,7 @@ export default function QuizPage() {
                   {selectedMode === 'question' && `Responderás ${QUESTION_QUIZ_LENGTH} preguntas con ${QUESTION_TIME_MS / 1000} segundos por pregunta.`}
                   {selectedMode === 'match' && `Emparejarás ${MATCH_PAIR_COUNT} letras con sus imágenes correspondientes.`}
                 </p>
-                <button onClick={startQuiz} className="btn-primary text-base px-8 py-3">
+                <button onClick={startQuiz} className="btn-primary text-base px-8 py-3 w-full sm:w-auto">
                   {selectedModeMeta.cta}
                 </button>
                 <div className="mt-4">
@@ -439,27 +438,27 @@ export default function QuizPage() {
 
         {phase === 'active' && selectedMode === 'gesture' && currentGestureLetter && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-stone-400 text-sm font-medium">
                 Reto {currentIdx + 1} de {gestureLetters.length}
               </span>
-              <div className={`text-sm font-mono tabular-nums ${timeLeft < 5000 ? 'text-red-400' : 'text-stone-400'}`}>
+              <div className={`text-sm font-mono tabular-nums shrink-0 ${timeLeft < 5000 ? 'text-red-400' : 'text-stone-400'}`}>
                 {Math.ceil(timeLeft / 1000)}s
               </div>
             </div>
 
             <div className="text-center py-4">
               <div className="text-sm text-stone-500 mb-1">Forma la seña de:</div>
-              <div className="text-6xl font-extrabold text-white">{currentGestureLetter.letter}</div>
+              <div className="text-5xl sm:text-6xl font-extrabold text-white">{currentGestureLetter.letter}</div>
             </div>
 
-            <div className="relative min-h-[320px]">
+            <div className="relative min-h-[260px] sm:min-h-[320px]">
               {cameraState.isLoading || loadingProgress ? (
-                <div className="w-full h-[320px] rounded-xl bg-stone-900 flex items-center justify-center">
+                <div className="w-full h-[260px] sm:h-[320px] rounded-xl bg-stone-900 flex items-center justify-center">
                   <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : cameraState.error || trackingError ? (
-                <div className="w-full h-[320px] rounded-xl bg-stone-900 flex items-center justify-center">
+                <div className="w-full h-[260px] sm:h-[320px] rounded-xl bg-stone-900 flex items-center justify-center">
                   <div className="text-center max-w-sm">
                     <p className="text-red-400 text-sm mb-4">{cameraState.error || trackingError}</p>
                     <button onClick={startQuiz} className="btn-primary text-sm">Reintentar</button>
@@ -471,7 +470,7 @@ export default function QuizPage() {
                   features={features}
                   allHandsLandmarks={allHandsLandmarks}
                   showLandmarks={true}
-                  className="w-full h-[320px]"
+                  className="w-full h-[260px] sm:h-[320px]"
                 />
               )}
             </div>
@@ -480,7 +479,7 @@ export default function QuizPage() {
               <FeedbackBar result={evalResult} isTracking={isTracking} />
             </div>
 
-            <div className="flex justify-center gap-1.5">
+            <div className="flex flex-wrap justify-center gap-1.5">
               {gestureLetters.map((_, index) => {
                 const round = results[index];
                 let color = 'bg-stone-700';
@@ -494,29 +493,30 @@ export default function QuizPage() {
 
         {phase === 'active' && selectedMode === 'question' && currentQuestionRound && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-stone-400 text-sm font-medium">
                 Pregunta {currentIdx + 1} de {questionRounds.length}
               </span>
-              <div className={`text-sm font-mono tabular-nums ${timeLeft < 4000 ? 'text-red-400' : 'text-stone-400'}`}>
+              <div className={`text-sm font-mono tabular-nums shrink-0 ${timeLeft < 4000 ? 'text-red-400' : 'text-stone-400'}`}>
                 {Math.ceil(timeLeft / 1000)}s
               </div>
             </div>
 
-            <div className="card p-6 bg-stone-900 border-stone-800 text-center">
+            <div className="card p-4 sm:p-6 bg-stone-900 border-stone-800 text-center">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-accent/80 mb-3">
                 Kahoot de señas
               </div>
-              <h2 className="text-2xl font-bold text-white mb-3">{currentQuestionRound.promptTitle}</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-white mb-3">{currentQuestionRound.promptTitle}</h2>
 
-              {currentQuestionRound.promptType === 'image' ? (
+              {currentQuestionRound.promptType === 'image' && currentQuestionRound.promptImagePath ? (
                 <>
-                  <LetterReferenceFigure
-                    letter={currentQuestionRound.letter.letter}
-                    alt={`Seña de la letra ${currentQuestionRound.letter.letter}`}
-                    variant="compact"
-                    className="w-40 h-40 mx-auto my-4"
-                  />
+                  <div className="mx-auto my-4 w-32 h-32 sm:w-40 sm:h-40 rounded-2xl border border-stone-700 bg-stone-950/60 p-3 flex items-center justify-center">
+                    <img
+                      src={currentQuestionRound.promptImagePath}
+                      alt={`Seña de la letra ${currentQuestionRound.letter.letter}`}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                   <p className="text-stone-400">{currentQuestionRound.promptBody}</p>
                 </>
               ) : (
@@ -546,7 +546,7 @@ export default function QuizPage() {
                     className={`rounded-2xl border px-4 py-5 text-left transition-all ${buttonClassName}`}
                   >
                     <span className="text-xs uppercase tracking-[0.18em] text-stone-500 block mb-2">Opción</span>
-                    <span className="text-2xl font-bold">{option}</span>
+                    <span className="text-xl sm:text-2xl font-bold">{option}</span>
                   </button>
                 );
               })}
@@ -566,7 +566,7 @@ export default function QuizPage() {
               </div>
             )}
 
-            <div className="flex justify-center gap-1.5">
+            <div className="flex flex-wrap justify-center gap-1.5">
               {questionRounds.map((_, index) => {
                 const round = results[index];
                 let color = 'bg-stone-700';
@@ -587,7 +587,7 @@ export default function QuizPage() {
                 </span>
                 <div className="text-stone-500 text-sm">Errores acumulados: {matchMistakes}</div>
               </div>
-              <div className="text-sm text-stone-400">{matchStatus}</div>
+              <div className="text-sm text-stone-400 break-words">{matchStatus}</div>
             </div>
 
             <div className="card p-5 bg-stone-900 border-stone-800">
@@ -608,7 +608,7 @@ export default function QuizPage() {
                       key={card.id}
                       onClick={() => handleLetterCardSelect(card.id, card.pairId)}
                       disabled={isMatched}
-                      className={`rounded-2xl border p-5 text-left transition-all ${
+                      className={`rounded-2xl border p-4 sm:p-5 text-left transition-all ${
                         isMatched
                           ? 'border-emerald-500 bg-emerald-500/10 text-emerald-100'
                           : isWrong
@@ -619,7 +619,7 @@ export default function QuizPage() {
                       }`}
                     >
                       <span className="text-xs uppercase tracking-[0.18em] text-stone-500 block mb-2">Letra</span>
-                      <span className="text-4xl font-extrabold">{card.letter}</span>
+                      <span className="text-3xl sm:text-4xl font-extrabold">{card.letter}</span>
                     </button>
                   );
                 })}
@@ -645,12 +645,13 @@ export default function QuizPage() {
                           : 'border-stone-800 bg-stone-900 hover:border-stone-700'
                       }`}
                     >
-                      <LetterReferenceFigure
-                        letter={card.letter}
-                        alt={card.alt}
-                        variant="compact"
-                        className="w-32 h-32 mx-auto"
-                      />
+                      <div className="w-24 h-24 sm:w-32 sm:h-32 mx-auto rounded-2xl border border-stone-700 bg-stone-950/60 p-3 flex items-center justify-center">
+                        <img
+                          src={card.imagePath}
+                          alt={card.alt}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
                     </button>
                   );
                 })}
@@ -661,12 +662,12 @@ export default function QuizPage() {
 
         {phase === 'results' && (
           <div className="flex items-center justify-center min-h-[60vh]">
-            <div className="card p-8 max-w-2xl w-full text-center bg-stone-900 border-stone-800">
+            <div className="card p-5 sm:p-8 max-w-2xl w-full text-center bg-stone-900 border-stone-800">
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500 mb-2">
                 {selectedModeMeta.title}
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">Resultados</h2>
-              <div className="text-5xl font-extrabold text-accent my-4">
+              <div className="text-4xl sm:text-5xl font-extrabold text-accent my-4">
                 {correctCount}/{totalRounds}
               </div>
 
@@ -721,11 +722,11 @@ export default function QuizPage() {
                 </div>
               )}
 
-              <div className="flex gap-3 justify-center">
-                <button onClick={() => router.push('/learn')} className="btn-secondary">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button onClick={() => router.push('/learn')} className="btn-secondary w-full sm:w-auto">
                   Volver
                 </button>
-                <button onClick={resetToIntro} className="btn-primary">
+                <button onClick={resetToIntro} className="btn-primary w-full sm:w-auto">
                   Nuevo quiz
                 </button>
               </div>

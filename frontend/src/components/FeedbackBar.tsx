@@ -25,11 +25,11 @@ export default function FeedbackBar({ result, isTracking }: FeedbackBarProps) {
 
   return (
     <div className="space-y-2 animate-fade-in">
-      <div className="flex items-center justify-between text-sm">
-        <span className={`font-medium ${config.textColor}`}>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-sm">
+        <span className={`font-medium break-words ${config.textColor}`}>
           {result?.feedback ?? 'Coloca tu mano frente a la cámara.'}
         </span>
-        <span className="font-mono text-text-secondary tabular-nums">
+        <span className="font-mono text-text-secondary tabular-nums self-end sm:self-auto">
           {Math.round(score * 100)}%
         </span>
       </div>

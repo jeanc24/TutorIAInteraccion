@@ -13,10 +13,10 @@ export default function LetterNavigation({ currentLetter, onPrev, onNext, onOpen
   const idx = getLetterIndex(currentLetter);
 
   return (
-    <div className="flex items-center justify-between gap-4">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
       <button
         onClick={onPrev}
-        className="btn-secondary flex items-center gap-1.5 text-sm"
+        className="btn-secondary flex items-center justify-center gap-1.5 text-sm w-full sm:w-auto"
         aria-label="Letra anterior"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -27,7 +27,7 @@ export default function LetterNavigation({ currentLetter, onPrev, onNext, onOpen
 
       <button
         onClick={onOpenSelector}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors"
+        className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors w-full sm:w-auto"
         aria-label="Abrir selector de letras"
       >
         <span className="text-xl font-bold text-accent">{currentLetter}</span>
@@ -38,7 +38,7 @@ export default function LetterNavigation({ currentLetter, onPrev, onNext, onOpen
 
       <button
         onClick={onNext}
-        className="btn-primary flex items-center gap-1.5 text-sm"
+        className="btn-primary flex items-center justify-center gap-1.5 text-sm w-full sm:w-auto"
         aria-label="Siguiente letra"
       >
         Siguiente

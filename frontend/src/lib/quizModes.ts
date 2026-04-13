@@ -1,4 +1,4 @@
-import { ALPHABET, getLetterImagePath } from './alphabet';
+import { ALPHABET } from './alphabet';
 import { LetterData } from './types';
 
 export type QuizMode = 'gesture' | 'question' | 'match';
@@ -72,6 +72,18 @@ export const QUIZ_MODE_META: QuizModeMeta[] = [
   },
 ];
 
+const QUIZ_IMAGE_LETTERS = new Set('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''));
+
+export function getQuizLetterImagePath(letter: string): string | null {
+  const normalizedLetter = letter.toUpperCase();
+  if (!QUIZ_IMAGE_LETTERS.has(normalizedLetter)) return null;
+  return `/asl_dataset_crops/${normalizedLetter}.png`;
+}
+
+function filterAlphabetWithQuizImages(alphabet: LetterData[]): LetterData[] {
+  return alphabet.filter((candidate) => getQuizLetterImagePath(candidate.letter) !== null);
+}
+
 function shuffleArray<T>(items: T[], random: () => number = Math.random): T[] {
   const copy = [...items];
 
@@ -103,19 +115,36 @@ export function createQuestionRounds(
   random: () => number = Math.random,
   alphabet: LetterData[] = ALPHABET
 ): QuestionRound[] {
-  return pickLetters(count, random, alphabet).map((letter, index) => {
+  const quizAlphabet = filterAlphabetWithQuizImages(alphabet);
+  const sourceAlphabet = quizAlphabet.length > 0 ? quizAlphabet : alphabet;
+
+  return pickLetters(count, random, sourceAlphabet).map((letter, index) => {
     const promptType: QuestionPromptType = index % 2 === 0 ? 'image' : 'description';
 
     if (promptType === 'image') {
+      const promptImagePath = getQuizLetterImagePath(letter.letter);
+
+      if (promptImagePath) {
+        return {
+          id: `question-${index}-${letter.letter}`,
+          letter,
+          correctLetter: letter.letter,
+          promptType,
+          promptTitle: '¿Qué letra muestra esta seña?',
+          promptBody: 'Observa la imagen y elige la respuesta correcta.',
+          promptImagePath,
+          options: buildQuestionOptions(letter, sourceAlphabet, random),
+        };
+      }
+
       return {
         id: `question-${index}-${letter.letter}`,
         letter,
         correctLetter: letter.letter,
-        promptType,
-        promptTitle: '¿Qué letra muestra esta seña?',
-        promptBody: 'Observa la imagen y elige la respuesta correcta.',
-        promptImagePath: getLetterImagePath(letter.letter),
-        options: buildQuestionOptions(letter, alphabet, random),
+        promptType: 'description',
+        promptTitle: '¿Qué letra se forma con esta indicación?',
+        promptBody: letter.description,
+        options: buildQuestionOptions(letter, sourceAlphabet, random),
       };
     }
 
@@ -126,7 +155,7 @@ export function createQuestionRounds(
       promptType,
       promptTitle: '¿Qué letra se forma con esta indicación?',
       promptBody: letter.description,
-      options: buildQuestionOptions(letter, alphabet, random),
+      options: buildQuestionOptions(letter, sourceAlphabet, random),
     };
   });
 }
@@ -136,11 +165,18 @@ export function createMatchRound(
   random: () => number = Math.random,
   alphabet: LetterData[] = ALPHABET
 ): MatchRound {
-  const pairs = pickLetters(pairCount, random, alphabet).map((letter) => ({
-    id: `pair-${letter.letter}`,
-    letter,
-    imagePath: getLetterImagePath(letter.letter),
-  }));
+  const quizAlphabet = filterAlphabetWithQuizImages(alphabet);
+
+  const pairs = pickLetters(pairCount, random, quizAlphabet).flatMap((letter) => {
+    const imagePath = getQuizLetterImagePath(letter.letter);
+    if (!imagePath) return [];
+
+    return [{
+      id: `pair-${letter.letter}`,
+      letter,
+      imagePath,
+    }];
+  });
 
   const letterCards = shuffleArray(
     pairs.map((pair) => ({

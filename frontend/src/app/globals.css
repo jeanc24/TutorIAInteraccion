@@ -56,7 +56,16 @@
 
 @layer utilities {
   .letter-display {
-    @apply text-7xl font-extrabold tracking-tight;
+    @apply text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 
   .camera-mirror {

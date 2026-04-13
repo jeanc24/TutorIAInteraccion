@@ -11,7 +11,7 @@ interface AlphabetGridProps {
 
 export default function AlphabetGrid({ selectedLetter, onSelectLetter, progress }: AlphabetGridProps) {
   return (
-    <div className="grid grid-cols-7 sm:grid-cols-9 gap-2">
+    <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-9 gap-1.5 sm:gap-2">
       {ALPHABET.map((item) => {
         const lp = progress?.letters[item.letter];
         const isCompleted = lp?.completed;
@@ -41,9 +41,9 @@ export default function AlphabetGrid({ selectedLetter, onSelectLetter, progress 
             <img
               src={getLetterImagePath(item.letter)}
               alt={item.letter}
-              className="w-8 h-8 object-contain opacity-80"
+              className="w-6 h-6 sm:w-8 sm:h-8 object-contain opacity-80"
             />
-            <span className="text-[10px] font-bold leading-none">{item.letter}</span>
+            <span className="text-[9px] sm:text-[10px] font-bold leading-none">{item.letter}</span>
             {isCompleted && (
               <div className="absolute -top-1 -right-1 w-4 h-4 bg-success rounded-full flex items-center justify-center">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">

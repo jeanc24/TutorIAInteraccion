@@ -43,19 +43,19 @@ export default function ProgressPage() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="card p-4 text-center">
-            <div className="text-3xl font-bold text-accent">{percentage}%</div>
+            <div className="text-2xl sm:text-3xl font-bold text-accent">{percentage}%</div>
             <div className="text-xs text-text-secondary mt-1">Progreso total</div>
           </div>
           <div className="card p-4 text-center">
-            <div className="text-3xl font-bold text-success">{completedCount}</div>
+            <div className="text-2xl sm:text-3xl font-bold text-success">{completedCount}</div>
             <div className="text-xs text-text-secondary mt-1">Letras dominadas</div>
           </div>
           <div className="card p-4 text-center">
-            <div className="text-3xl font-bold">{stats?.attempted ?? 0}</div>
+            <div className="text-2xl sm:text-3xl font-bold">{stats?.attempted ?? 0}</div>
             <div className="text-xs text-text-secondary mt-1">Letras intentadas</div>
           </div>
           <div className="card p-4 text-center">
-            <div className="text-3xl font-bold">{stats?.totalAttempts ?? 0}</div>
+            <div className="text-2xl sm:text-3xl font-bold">{stats?.totalAttempts ?? 0}</div>
             <div className="text-xs text-text-secondary mt-1">Total de intentos</div>
           </div>
         </div>
@@ -88,7 +88,7 @@ export default function ProgressPage() {
                 <Link
                   key={item.letter}
                   href={`/practice?letter=${item.letter}`}
-                  className={`flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-stone-50 dark:hover:bg-stone-800 ${
+                  className={`flex items-start sm:items-center gap-3 p-3 rounded-lg transition-colors hover:bg-stone-50 dark:hover:bg-stone-800 ${
                     isDone ? 'bg-emerald-50/50 dark:bg-emerald-950/30' : ''
                   }`}
                 >
@@ -102,7 +102,7 @@ export default function ProgressPage() {
                     {item.letter}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-sm">Letra {item.letter}</span>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${getDifficultyColor(item.difficulty)}`}>
                         {getDifficultyLabel(item.difficulty)}
@@ -121,7 +121,7 @@ export default function ProgressPage() {
                     </div>
                   </div>
                   {isDone && (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 mt-0.5 sm:mt-0">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   )}

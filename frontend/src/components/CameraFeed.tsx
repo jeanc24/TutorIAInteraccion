@@ -112,8 +112,8 @@ export default function CameraFeed({ videoRef, features, allHandsLandmarks, show
       />
       {!features && !allHandsLandmarks?.length && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="absolute inset-4 border-2 border-dashed border-white/20 rounded-xl" />
-          <span className="text-white/60 text-sm font-medium bg-black/30 px-3 py-1.5 rounded-full">
+          <div className="absolute inset-2 sm:inset-4 border-2 border-dashed border-white/20 rounded-xl" />
+          <span className="text-white/60 text-xs sm:text-sm font-medium bg-black/30 px-3 py-1.5 rounded-full">
             Coloca tu mano aquí
           </span>
         </div>
