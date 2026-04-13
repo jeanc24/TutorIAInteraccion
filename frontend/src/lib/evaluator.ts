@@ -20,6 +20,8 @@ const FINGER_EXPONENT = 1.7;
 const DIST_EXPONENT = 1.4;
 const STABILITY_EXPONENT = 1.2;
 const CRITICAL_SCORE_CAP = 0.5;
+const MIN_HAND_SCALE = 1e-4;
+const DISTANCE_TOLERANCE = 0.45;
 
 export function createEvalContext(): EvalContext {
   return { poseStartedAt: null, holdMs: 0, consecutiveSuccessFrames: 0 };
@@ -67,7 +69,7 @@ export function evaluate(
       feedback = `¡Correcto! Letra "${letter.letter}" completada.`;
     } else {
       status = 'holding';
-      feedback = `Mantén la postura (${ctx.consecutiveSuccessFrames}/${REQUIRED_CONSECUTIVE_FRAMES} frames)...`;
+      feedback = 'Mantén la postura...';
     }
   } else {
     ctx.poseStartedAt = null;
@@ -140,10 +142,10 @@ function scoreDistances(letter: LetterData, features: HandFeatures): number {
   for (const check of letter.distanceChecks) {
     const key = `${check.from}-${check.to}`;
     const dist = features.tipDistances[key] ?? 1;
-    const normalizedExpectedMax = check.maxDistance / Math.max(features.handScale, 1e-4);
+    const normalizedExpectedMax = check.maxDistance / Math.max(features.handScale, MIN_HAND_SCALE);
     const strictExpectedMax = normalizedExpectedMax * 0.85;
-    const ratio = dist / Math.max(strictExpectedMax, 1e-4);
-    const s = Math.exp(-((Math.max(0, ratio - 1) / 0.45) ** 2));
+    const ratio = dist / Math.max(strictExpectedMax, MIN_HAND_SCALE);
+    const s = Math.exp(-((Math.max(0, ratio - 1) / DISTANCE_TOLERANCE) ** 2));
     totalScore += s;
   }
 
