@@ -55,7 +55,10 @@ function isFingerExtendedByAxis(
   pipIdx: number,
   mcpIdx: number
 ): boolean {
-  return landmarks[tipIdx][1] < landmarks[pipIdx][1] && landmarks[pipIdx][1] < landmarks[mcpIdx][1];
+  const tipY = landmarks[tipIdx][1];
+  const pipY = landmarks[pipIdx][1];
+  const mcpY = landmarks[mcpIdx][1];
+  return tipY < pipY && pipY < mcpY;
 }
 
 function getThumbMetrics(landmarks: Landmark[], handScale: number): {

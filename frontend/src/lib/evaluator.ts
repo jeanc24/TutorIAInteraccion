@@ -14,7 +14,6 @@ const FINGER_LABELS: Record<Finger, string> = {
   pinky: 'meñique',
 };
 
-const STRICT_HIGH_SCORE = 0.80;
 const REQUIRED_CONSECUTIVE_FRAMES = 6;
 const FINGER_EXPONENT = 1.2;
 const DIST_EXPONENT = 1.1;
@@ -57,7 +56,7 @@ export function evaluate(
     score = Math.min(score, CRITICAL_SCORE_CAP);
   }
 
-  const strictThreshold = Math.max(letter.thresholdSuccess, STRICT_HIGH_SCORE);
+  const strictThreshold = letter.thresholdSuccess;
   let status: EvaluationStatus = 'tracking';
   let completed = false;
   let feedback = '';
