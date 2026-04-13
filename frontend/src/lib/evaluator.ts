@@ -154,8 +154,7 @@ function scoreDistances(letter: LetterData, features: HandFeatures): number {
     const key = `${check.from}-${check.to}`;
     const dist = features.tipDistances[key] ?? 1;
     const normalizedExpectedMax = check.maxDistance / Math.max(features.handScale, MIN_HAND_SCALE);
-    const strictExpectedMax = normalizedExpectedMax * 1.0;
-    const ratio = dist / Math.max(strictExpectedMax, MIN_HAND_SCALE);
+    const ratio = dist / Math.max(normalizedExpectedMax, MIN_HAND_SCALE);
     const s = Math.exp(-((Math.max(0, ratio - 1) / DISTANCE_TOLERANCE) ** 2));
     totalScore += s;
   }

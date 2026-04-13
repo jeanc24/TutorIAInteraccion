@@ -1,7 +1,10 @@
 import { Finger, HandFeatures, Landmark } from './types';
 
 const TIP_INDICES = [4, 8, 12, 16, 20];
-const HAND_SCALE_MIN = 1e-4;
+const DIP_INDICES = [3, 7, 11, 15, 19];
+const PIP_INDICES = [3, 6, 10, 14, 18];
+const MCP_INDICES = [2, 5, 9, 13, 17];
+const MIN_HAND_SCALE = 1e-4;
 
 function distance(a: Landmark, b: Landmark): number {
   return Math.sqrt(
@@ -74,10 +77,10 @@ function getFingerMetrics(landmarks: Landmark[], fingerIndex: number): {
   extensionScore: number;
   extensionAngle: number;
 } {
-  const tipIdx = [0, 8, 12, 16, 20][fingerIndex];
-  const dipIdx = [0, 7, 11, 15, 19][fingerIndex];
-  const pipIdx = [0, 6, 10, 14, 18][fingerIndex];
-  const mcpIdx = [0, 5, 9, 13, 17][fingerIndex];
+  const tipIdx = TIP_INDICES[fingerIndex];
+  const dipIdx = DIP_INDICES[fingerIndex];
+  const pipIdx = PIP_INDICES[fingerIndex];
+  const mcpIdx = MCP_INDICES[fingerIndex];
 
   const mcpAngle = angle(landmarks[0], landmarks[mcpIdx], landmarks[pipIdx]);
   const pipAngle = angle(landmarks[mcpIdx], landmarks[pipIdx], landmarks[dipIdx]);
@@ -89,7 +92,7 @@ function getFingerMetrics(landmarks: Landmark[], fingerIndex: number): {
 }
 
 function getHandScale(landmarks: Landmark[]): number {
-  return Math.max(distance(landmarks[0], landmarks[9]), HAND_SCALE_MIN);
+  return Math.max(distance(landmarks[0], landmarks[9]), MIN_HAND_SCALE);
 }
 
 export function extractFeatures(
