@@ -1,9 +1,7 @@
-import { Finger, FINGER_NAMES, HandFeatures, Landmark } from './types';
+import { Finger, HandFeatures, Landmark } from './types';
 
 const TIP_INDICES = [4, 8, 12, 16, 20];
-const PIP_INDICES = [3, 6, 10, 14, 18];
-const MCP_INDICES = [2, 5, 9, 13, 17];
-const DIP_INDICES = [3, 7, 11, 15, 19];
+const HAND_SCALE_MIN = 1e-4;
 
 function distance(a: Landmark, b: Landmark): number {
   return Math.sqrt(
@@ -26,40 +24,53 @@ function angle(a: Landmark, b: Landmark, c: Landmark): number {
   return Math.acos(cosAngle) * (180 / Math.PI);
 }
 
-function isThumbExtended(landmarks: Landmark[], handedness: string): boolean {
-  const tip = landmarks[4];
-  const ip = landmarks[3];
-  const mcp = landmarks[2];
-
-  if (handedness === 'Left') {
-    return tip[0] < ip[0] && ip[0] < mcp[0];
-  }
-  return tip[0] > ip[0] && ip[0] > mcp[0];
+function normalizeDistance(a: Landmark, b: Landmark, handScale: number): number {
+  return distance(a, b) / handScale;
 }
 
-function isFingerExtended(
-  landmarks: Landmark[],
-  tipIdx: number,
-  pipIdx: number,
-  mcpIdx: number
-): boolean {
-  return landmarks[tipIdx][1] < landmarks[pipIdx][1] &&
-         landmarks[pipIdx][1] < landmarks[mcpIdx][1];
+function fingerExtendedScore(jointAngles: number[]): number {
+  const normalized = jointAngles.map((joint) => {
+    const t = (joint - 90) / 90;
+    return Math.max(0, Math.min(1, t));
+  });
+  return normalized.reduce((acc, cur) => acc + cur, 0) / normalized.length;
 }
 
-function getFingerAngle(landmarks: Landmark[], fingerIndex: number): number {
-  const tipIdx = TIP_INDICES[fingerIndex];
-  const pipIdx = PIP_INDICES[fingerIndex];
-  const mcpIdx = MCP_INDICES[fingerIndex];
+function getThumbMetrics(landmarks: Landmark[], handScale: number): {
+  extensionScore: number;
+  extensionAngle: number;
+} {
+  const mcpAngle = angle(landmarks[1], landmarks[2], landmarks[3]);
+  const ipAngle = angle(landmarks[2], landmarks[3], landmarks[4]);
+  const reach = normalizeDistance(landmarks[4], landmarks[5], handScale);
+  const reachScore = Math.max(0, Math.min(1, (reach - 0.25) / 0.45));
 
-  if (fingerIndex === 0) {
-    return angle(landmarks[tipIdx], landmarks[pipIdx], landmarks[mcpIdx]);
-  }
+  const extensionScore = 0.4 * fingerExtendedScore([mcpAngle, ipAngle]) + 0.6 * reachScore;
+  const extensionAngle = (mcpAngle + ipAngle) / 2;
 
-  const dipIdx = DIP_INDICES[fingerIndex];
-  const a1 = angle(landmarks[tipIdx], landmarks[dipIdx], landmarks[pipIdx]);
-  const a2 = angle(landmarks[dipIdx], landmarks[pipIdx], landmarks[mcpIdx]);
-  return (a1 + a2) / 2;
+  return { extensionScore, extensionAngle };
+}
+
+function getFingerMetrics(landmarks: Landmark[], fingerIndex: number): {
+  extensionScore: number;
+  extensionAngle: number;
+} {
+  const tipIdx = [0, 8, 12, 16, 20][fingerIndex];
+  const dipIdx = [0, 7, 11, 15, 19][fingerIndex];
+  const pipIdx = [0, 6, 10, 14, 18][fingerIndex];
+  const mcpIdx = [0, 5, 9, 13, 17][fingerIndex];
+
+  const mcpAngle = angle(landmarks[0], landmarks[mcpIdx], landmarks[pipIdx]);
+  const pipAngle = angle(landmarks[mcpIdx], landmarks[pipIdx], landmarks[dipIdx]);
+  const dipAngle = angle(landmarks[pipIdx], landmarks[dipIdx], landmarks[tipIdx]);
+  const extensionScore = fingerExtendedScore([mcpAngle, pipAngle, dipAngle]);
+  const extensionAngle = (mcpAngle + pipAngle + dipAngle) / 3;
+
+  return { extensionScore, extensionAngle };
+}
+
+function getHandScale(landmarks: Landmark[]): number {
+  return Math.max(distance(landmarks[0], landmarks[9]), HAND_SCALE_MIN);
 }
 
 export function extractFeatures(
@@ -67,31 +78,40 @@ export function extractFeatures(
   handedness: string,
   prevLandmarks: Landmark[] | null
 ): HandFeatures {
+  const handScale = getHandScale(landmarks);
+  const thumbMetrics = getThumbMetrics(landmarks, handScale);
+  const indexMetrics = getFingerMetrics(landmarks, 1);
+  const middleMetrics = getFingerMetrics(landmarks, 2);
+  const ringMetrics = getFingerMetrics(landmarks, 3);
+  const pinkyMetrics = getFingerMetrics(landmarks, 4);
+
   const fingerStates: Record<Finger, boolean> = {
-    thumb: isThumbExtended(landmarks, handedness),
-    index: isFingerExtended(landmarks, 8, 6, 5),
-    middle: isFingerExtended(landmarks, 12, 10, 9),
-    ring: isFingerExtended(landmarks, 16, 14, 13),
-    pinky: isFingerExtended(landmarks, 20, 18, 17),
+    thumb: thumbMetrics.extensionScore >= 0.62,
+    index: indexMetrics.extensionScore >= 0.70,
+    middle: middleMetrics.extensionScore >= 0.70,
+    ring: ringMetrics.extensionScore >= 0.70,
+    pinky: pinkyMetrics.extensionScore >= 0.68,
   };
 
-  const fingerAngles: Record<Finger, number> = {} as Record<Finger, number>;
-  FINGER_NAMES.forEach((name, i) => {
-    fingerAngles[name] = getFingerAngle(landmarks, i);
-  });
+  const fingerAngles: Record<Finger, number> = {
+    thumb: thumbMetrics.extensionAngle,
+    index: indexMetrics.extensionAngle,
+    middle: middleMetrics.extensionAngle,
+    ring: ringMetrics.extensionAngle,
+    pinky: pinkyMetrics.extensionAngle,
+  };
 
   const tipDistances: Record<string, number> = {};
   for (let i = 0; i < TIP_INDICES.length; i++) {
     for (let j = i + 1; j < TIP_INDICES.length; j++) {
       const key = `${TIP_INDICES[i]}-${TIP_INDICES[j]}`;
-      tipDistances[key] = distance(landmarks[TIP_INDICES[i]], landmarks[TIP_INDICES[j]]);
+      tipDistances[key] = normalizeDistance(
+        landmarks[TIP_INDICES[i]],
+        landmarks[TIP_INDICES[j]],
+        handScale
+      );
     }
   }
-  tipDistances['4-8'] = distance(landmarks[4], landmarks[8]);
-  tipDistances['4-12'] = distance(landmarks[4], landmarks[12]);
-  tipDistances['4-16'] = distance(landmarks[4], landmarks[16]);
-  tipDistances['4-20'] = distance(landmarks[4], landmarks[20]);
-  tipDistances['8-12'] = distance(landmarks[8], landmarks[12]);
 
   let stability = 1.0;
   if (prevLandmarks) {
@@ -100,7 +120,7 @@ export function extractFeatures(
       totalDelta += distance2D(landmarks[tipIdx], prevLandmarks[tipIdx]);
     }
     const avgDelta = totalDelta / TIP_INDICES.length;
-    stability = Math.max(0, 1 - Math.min(avgDelta / 0.15, 1));
+    stability = Math.max(0, 1 - Math.min((avgDelta / handScale) / 0.9, 1));
   }
 
   return {
@@ -108,6 +128,7 @@ export function extractFeatures(
     fingerStates,
     fingerAngles,
     tipDistances,
+    handScale,
     stability,
     handedness,
   };

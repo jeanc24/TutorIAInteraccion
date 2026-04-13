@@ -32,6 +32,7 @@ export interface HandFeatures {
   fingerStates: Record<Finger, boolean>;
   fingerAngles: Record<Finger, number>;
   tipDistances: Record<string, number>;
+  handScale: number;
   stability: number;
   handedness: string;
 }
