@@ -36,6 +36,25 @@ function fingerExtendedScore(jointAngles: number[]): number {
   return normalized.reduce((acc, cur) => acc + cur, 0) / normalized.length;
 }
 
+function isThumbExtendedByAxis(landmarks: Landmark[], handedness: string): boolean {
+  const tip = landmarks[4];
+  const ip = landmarks[3];
+  const mcp = landmarks[2];
+  if (handedness === 'Left') {
+    return tip[0] < ip[0] && ip[0] < mcp[0];
+  }
+  return tip[0] > ip[0] && ip[0] > mcp[0];
+}
+
+function isFingerExtendedByAxis(
+  landmarks: Landmark[],
+  tipIdx: number,
+  pipIdx: number,
+  mcpIdx: number
+): boolean {
+  return landmarks[tipIdx][1] < landmarks[pipIdx][1] && landmarks[pipIdx][1] < landmarks[mcpIdx][1];
+}
+
 function getThumbMetrics(landmarks: Landmark[], handScale: number): {
   extensionScore: number;
   extensionAngle: number;
@@ -45,7 +64,7 @@ function getThumbMetrics(landmarks: Landmark[], handScale: number): {
   const reach = normalizeDistance(landmarks[4], landmarks[5], handScale);
   const reachScore = Math.max(0, Math.min(1, (reach - 0.25) / 0.45));
 
-  const extensionScore = 0.4 * fingerExtendedScore([mcpAngle, ipAngle]) + 0.6 * reachScore;
+  const extensionScore = 0.55 * fingerExtendedScore([mcpAngle, ipAngle]) + 0.45 * reachScore;
   const extensionAngle = (mcpAngle + ipAngle) / 2;
 
   return { extensionScore, extensionAngle };
@@ -84,13 +103,18 @@ export function extractFeatures(
   const middleMetrics = getFingerMetrics(landmarks, 2);
   const ringMetrics = getFingerMetrics(landmarks, 3);
   const pinkyMetrics = getFingerMetrics(landmarks, 4);
+  const thumbByAxis = isThumbExtendedByAxis(landmarks, handedness);
+  const indexByAxis = isFingerExtendedByAxis(landmarks, 8, 6, 5);
+  const middleByAxis = isFingerExtendedByAxis(landmarks, 12, 10, 9);
+  const ringByAxis = isFingerExtendedByAxis(landmarks, 16, 14, 13);
+  const pinkyByAxis = isFingerExtendedByAxis(landmarks, 20, 18, 17);
 
   const fingerStates: Record<Finger, boolean> = {
-    thumb: thumbMetrics.extensionScore >= 0.62,
-    index: indexMetrics.extensionScore >= 0.70,
-    middle: middleMetrics.extensionScore >= 0.70,
-    ring: ringMetrics.extensionScore >= 0.70,
-    pinky: pinkyMetrics.extensionScore >= 0.68,
+    thumb: thumbMetrics.extensionScore >= 0.50 || thumbByAxis,
+    index: indexMetrics.extensionScore >= 0.58 || indexByAxis,
+    middle: middleMetrics.extensionScore >= 0.58 || middleByAxis,
+    ring: ringMetrics.extensionScore >= 0.58 || ringByAxis,
+    pinky: pinkyMetrics.extensionScore >= 0.55 || pinkyByAxis,
   };
 
   const fingerAngles: Record<Finger, number> = {

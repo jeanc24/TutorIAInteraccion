@@ -14,14 +14,14 @@ const FINGER_LABELS: Record<Finger, string> = {
   pinky: 'meñique',
 };
 
-const STRICT_HIGH_SCORE = 0.85;
-const REQUIRED_CONSECUTIVE_FRAMES = 12;
-const FINGER_EXPONENT = 1.7;
-const DIST_EXPONENT = 1.4;
-const STABILITY_EXPONENT = 1.2;
-const CRITICAL_SCORE_CAP = 0.5;
+const STRICT_HIGH_SCORE = 0.80;
+const REQUIRED_CONSECUTIVE_FRAMES = 6;
+const FINGER_EXPONENT = 1.2;
+const DIST_EXPONENT = 1.1;
+const STABILITY_EXPONENT = 1.0;
+const CRITICAL_SCORE_CAP = 0.68;
 const MIN_HAND_SCALE = 1e-4;
-const DISTANCE_TOLERANCE = 0.45;
+const DISTANCE_TOLERANCE = 0.8;
 
 export function createEvalContext(): EvalContext {
   return { poseStartedAt: null, holdMs: 0, consecutiveSuccessFrames: 0 };
@@ -33,16 +33,27 @@ export function evaluate(
   ctx: EvalContext,
   now: number
 ): EvaluationResult {
-  const { fingerScore, corrections, criticalFailure } = scoreFingers(letter, features);
+  const { fingerScore, corrections, criticalFailureCount } = scoreFingers(letter, features);
   const distScore = scoreDistances(letter, features);
   const stabilityScore = features.stability;
+  const hasDistanceChecks = Boolean(letter.distanceChecks?.length);
 
-  const rawScore = Math.pow(fingerScore, FINGER_EXPONENT) *
+  const multiplicativeScore = Math.pow(fingerScore, FINGER_EXPONENT) *
     Math.pow(distScore, DIST_EXPONENT) *
     Math.pow(stabilityScore, STABILITY_EXPONENT);
+  const linearFingerWeight = 0.6;
+  const linearDistanceWeight = hasDistanceChecks ? 0.25 : 0;
+  const linearStabilityWeight = hasDistanceChecks ? 0.15 : 0.4;
+  const linearWeightTotal = linearFingerWeight + linearDistanceWeight + linearStabilityWeight;
+  const linearScore = (
+    linearFingerWeight * fingerScore +
+    linearDistanceWeight * distScore +
+    linearStabilityWeight * stabilityScore
+  ) / linearWeightTotal;
+  const rawScore = 0.7 * multiplicativeScore + 0.3 * linearScore;
 
   let score = Math.max(0, Math.min(rawScore, 1));
-  if (criticalFailure) {
+  if (criticalFailureCount >= 2) {
     score = Math.min(score, CRITICAL_SCORE_CAP);
   }
 
@@ -96,11 +107,11 @@ export function evaluate(
 function scoreFingers(
   letter: LetterData,
   features: HandFeatures
-): { fingerScore: number; corrections: string[]; criticalFailure: boolean } {
+): { fingerScore: number; corrections: string[]; criticalFailureCount: number } {
   let totalScore = 0;
   let checked = 0;
   const corrections: string[] = [];
-  let criticalFailure = false;
+  let criticalFailureCount = 0;
 
   for (const finger of FINGER_NAMES) {
     const expected = letter.fingerPattern[finger];
@@ -110,12 +121,12 @@ function scoreFingers(
     const actual = features.fingerStates[finger];
     const angleDeg = features.fingerAngles[finger];
 
-    const target = expected ? 172 : 102;
-    const tolerance = expected ? 16 : 18;
+    const target = expected ? 165 : 105;
+    const tolerance = expected ? 24 : 24;
     const angleErr = Math.abs(angleDeg - target);
     const angleScore = Math.exp(-((angleErr / tolerance) ** 2));
     const stateScore = actual === expected ? 1 : 0;
-    const componentScore = 0.65 * stateScore + 0.35 * angleScore;
+    const componentScore = 0.75 * stateScore + 0.25 * angleScore;
     totalScore += componentScore;
 
     if (actual !== expected) {
@@ -123,15 +134,15 @@ function scoreFingers(
       corrections.push(`${action} el ${FINGER_LABELS[finger]}`);
     }
 
-    if (expected && (!actual || angleDeg < 132)) {
-      criticalFailure = true;
+    if (expected && !actual && angleDeg < 118) {
+      criticalFailureCount += 1;
     }
   }
 
   return {
     fingerScore: checked > 0 ? totalScore / checked : 1,
     corrections,
-    criticalFailure,
+    criticalFailureCount,
   };
 }
 
@@ -143,7 +154,7 @@ function scoreDistances(letter: LetterData, features: HandFeatures): number {
     const key = `${check.from}-${check.to}`;
     const dist = features.tipDistances[key] ?? 1;
     const normalizedExpectedMax = check.maxDistance / Math.max(features.handScale, MIN_HAND_SCALE);
-    const strictExpectedMax = normalizedExpectedMax * 0.85;
+    const strictExpectedMax = normalizedExpectedMax * 1.0;
     const ratio = dist / Math.max(strictExpectedMax, MIN_HAND_SCALE);
     const s = Math.exp(-((Math.max(0, ratio - 1) / DISTANCE_TOLERANCE) ** 2));
     totalScore += s;
